@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "incus-incant"
-version = "0.0.1"
+version = "0.0.2"
 description = ""
 authors = ["Lucas Nussbaum <lucas@debian.org>"]
 readme = "README.md"
