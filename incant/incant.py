@@ -21,6 +21,7 @@ class Incant:
     def __init__(self, **kwargs):
         self.verbose = kwargs.get("verbose", False)
         self.config = kwargs.get("config", None)
+        self.quiet = kwargs.get("quiet", False)
         self.config_data = self.load_config()
 
     def find_config_file(self):
@@ -50,18 +51,19 @@ class Incant:
                 if self.verbose:
                     click.secho(f"Config found at: {path}", **CLICK_STYLE["success"])
                 return path
-        # If no config is found, raise an error or return None
-        raise FileNotFoundError("No valid config file found.")
+        # If no config is found, return None
+        return None
 
     def load_config(self):
-        # Find the config file first
-        config_file = self.find_config_file()
-
-        if config_file is None:
-            click.secho("No config file found to load.", **CLICK_STYLE["error"])
-            return None
-
         try:
+            # Find the config file first
+            config_file = self.find_config_file()
+
+            if config_file is None:
+                if not self.quiet:
+                    click.secho("No config file found to load.", **CLICK_STYLE["error"])
+                return None
+
             # Read the config file content
             with open(config_file, "r", encoding="utf-8") as file:
                 content = file.read()
@@ -99,17 +101,21 @@ class Incant:
 
     def dump_config(self):
         if not self.config_data:
-            click.secho("No configuration loaded to dump.", **CLICK_STYLE["error"])
-            return
+            sys.exit(1)
         try:
             yaml.dump(self.config_data, sys.stdout, default_flow_style=False, sort_keys=False)
         except Exception as e:
             click.secho(f"Error dumping configuration: {e}", **CLICK_STYLE["error"])
 
-    def up(self, name=None):
-        if not self.config_data or "instances" not in self.config_data:
+    def check_config(self):
+        if not self.config_data:
+            sys.exit(1)
+        if "instances" not in self.config_data:
             click.secho("No instances found in config.", **CLICK_STYLE["error"])
-            return
+            sys.exit(1)
+
+    def up(self, name=None):
+        self.check_config()
 
         incus = IncusCLI()
 
@@ -184,6 +190,8 @@ class Incant:
                 self.provision(instance_name)
 
     def provision(self, name: str = None):
+        self.check_config()
+
         incus = IncusCLI()
 
         if name:
@@ -214,9 +222,7 @@ class Incant:
                     incus.provision(instance_name, step)
 
     def destroy(self, name=None):
-        if not self.config_data or "instances" not in self.config_data:
-            click.secho("No instances found in config.", **CLICK_STYLE["error"])
-            return
+        self.check_config()
 
         incus = IncusCLI()
 

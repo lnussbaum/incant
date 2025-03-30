@@ -5,11 +5,14 @@ from incant import Incant
 @click.group(invoke_without_command=True)
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose mode.")
 @click.option("-f", "--config", type=click.Path(exists=True), help="Path to configuration file.")
+@click.option(
+    "-q", "--quiet", is_flag=True, help="Do not display error message if no config file found."
+)
 @click.pass_context
-def cli(ctx, verbose, config):
+def cli(ctx, verbose, config, quiet):
     """Incant -- an Incus frontend for descriptive development environments"""
     ctx.ensure_object(dict)
-    ctx.obj["OPTIONS"] = {"verbose": verbose, "config": config}
+    ctx.obj["OPTIONS"] = {"verbose": verbose, "config": config, "quiet": quiet}
     if verbose:
         click.echo(
             f"Using config file: {config}" if config else "No config file provided, using defaults."
@@ -51,3 +54,11 @@ def dump(ctx):
     """Show the generated configuration file."""
     inc = Incant(**ctx.obj["OPTIONS"])
     inc.dump_config()
+
+
+@cli.command()
+@click.pass_context
+def list(ctx):
+    """List all instances defined in the configuration."""
+    inc = Incant(**ctx.obj["OPTIONS"])
+    inc.list_instances()
