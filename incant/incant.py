@@ -243,3 +243,10 @@ class Incant:
 
             click.secho(f"Destroying instance {instance_name} ...", **CLICK_STYLE["success"])
             incus.destroy_instance(instance_name)
+
+    def list_instances(self):
+        """List all instances defined in the configuration."""
+        self.check_config()
+
+        for instance_name in self.config_data["instances"]:
+            click.echo(f"{instance_name}")
