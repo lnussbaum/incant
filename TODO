@@ -1,0 +1,5 @@
+deal with shift=true/restricted. See https://discuss.linuxcontainers.org/t/unable-to-shift-mount-a-host-directory-the-shift-property-cannot-be-used-with-a-restricted-source-path/21142/4
+deal with shared folder in VM
+add other instance options/configs
+
+https://github.com/neoaggelos/cluster-api-provider-lxc

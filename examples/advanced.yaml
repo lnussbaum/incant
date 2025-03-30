@@ -1,0 +1,27 @@
+instances:
+  deb11:
+    image: images:debian/11
+    vm: true
+    wait: true # wait for instance to be ready (incus agent running)
+  deb10:
+    image: images:debian/10
+    provision: |
+      #!/bin/bash
+      set -xe
+      apt-get update
+      apt-get -y install tmux
+  webserver:
+    image: images:debian/12
+    # Let's use a more complex provisionning here.
+    vm: true
+    provision:
+      # first, a single command
+      - apt-get update && apt-get -y install ruby
+      # then, a script. the path can be relative to the current dir,
+      # as incant will 'cd' to /incant
+      - examples/provision/web_server.rb
+      # then a multi-line snippet that will be copied as a temporary file
+      - |
+        #!/bin/bash
+        set -xe
+        echo Done!

@@ -1,0 +1,22 @@
+name: Pylint
+
+on: [push,pull_request]
+
+jobs:
+  pylint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.11
+    - name: Install dependencies
+      run: |
+        set -x
+        python -m pip install --upgrade pip
+        pip install pylint poetry
+        poetry install --no-interaction --no-root
+
+    - name: Run pylint
+      run: poetry run pylint incant/

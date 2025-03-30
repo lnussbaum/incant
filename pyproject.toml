@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "incus-incant"
+version = "0.0.1"
+description = ""
+authors = ["Lucas Nussbaum <lucas@debian.org>"]
+readme = "README.md"
+
+[[tool.poetry.packages]]
+include = "incant"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+click = "^8.1.3"
+jinja2 = "^3.1.2"
+pyyaml = "^6.0"
+mako = "^1.1.3"
+
+[tool.poetry.scripts]
+incant = "incant.cli:cli"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^3.3.4"
+
+[tool.black]
+line-length = 100
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
