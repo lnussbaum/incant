@@ -169,3 +169,13 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Debian packaging stuff
+.pybuild/
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/incant.postinst.debhelper
+debian/incant.prerm.debhelper
+debian/incant.substvars
+debian/incant/
