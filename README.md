@@ -61,7 +61,7 @@ or for a specific instance:
 $ incant up my-instance
 ```
 
-### Provision an Instance
+### Provision again an Instance that was already started previously
 
 ```sh
 $ incant provision
@@ -72,6 +72,20 @@ or for a specific instance:
 ```sh
 $ incant provision my-instance
 ```
+
+### Use your Instances
+
+Use [Incus commands](https://linuxcontainers.org/incus/docs/main/instances/) to interact with your instances:
+
+```sh
+$ incus exec ubuntu-container -- apt-get update
+$ incus shell my-instance
+$ incus console my-instance
+$ incus file edit my-container/etc/hosts
+$ incus file delete <instance_name>/<path_to_file>
+```
+
+Your instance's services are directly reachable on the network. They should be discoverable in DNS if the instance supports [LLMNR](https://en.wikipedia.org/wiki/Link-Local_Multicast_Name_Resolution) or [mDNS](https://en.wikipedia.org/wiki/Multicast_DNS).
 
 ### Destroy an Instance
 
