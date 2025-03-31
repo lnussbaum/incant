@@ -14,6 +14,14 @@ instances:
     image: images:debian/12
     # Let's use a more complex provisionning here.
     vm: true
+    profiles:
+      - default
+    config:
+      limits.processes: 100
+    devices:
+      root:
+        size: 20GB
+    type: aws:t2.micro
     provision:
       # first, a single command
       - apt-get update && apt-get -y install ruby

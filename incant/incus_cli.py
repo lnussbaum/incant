@@ -71,18 +71,37 @@ class IncusCLI:
         image: str,
         profiles: Optional[List[str]] = None,
         vm: bool = False,
+        config: Optional[Dict[str, str]] = None,
+        devices: Optional[Dict[str, Dict[str, str]]] = None,
+        network: Optional[str] = None,
+        instance_type: Optional[str] = None,
     ) -> None:
-        """Creates a new instance with the optional --vm flag and profiles."""
+        """Creates a new instance with optional parameters."""
         command = ["launch", image, name]
 
         if vm:
-            command.append("--vm")  # Add --vm option if vm is True
+            command.append("--vm")
 
         if profiles:
             for profile in profiles:
-                command.extend(
-                    ["--profile", profile]
-                )  # Add each profile as a separate --profile <profile>
+                command.extend(["--profile", profile])
+
+        if config:
+            for key, value in config.items():
+                command.extend(["--config", f"{key}={value}"])
+
+        if devices:
+            for dev_name, dev_attrs in devices.items():
+                dev_str = f"{dev_name}"
+                for k, v in dev_attrs.items():
+                    dev_str += f",{k}={v}"
+                command.extend(["--device", dev_str])
+
+        if network:
+            command.extend(["--network", network])
+
+        if instance_type:
+            command.extend(["--type", instance_type])
 
         self._run_command(command)
 

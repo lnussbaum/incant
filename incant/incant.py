@@ -134,23 +134,30 @@ class Incant:
             # Process the instance
             image = instance_data.get("image")
             if not image:
-                click.secho(
-                    f"Skipping {instance_name}: No image defined.",
-                    **CLICK_STYLE["error"],
-                )
+                click.secho(f"Skipping {instance_name}: No image defined.", **CLICK_STYLE["error"])
                 continue
 
-            # Check if 'vm' is set to true and pass it as a boolean argument
             vm = instance_data.get("vm", False)
-
-            # Get profiles if they're defined (as a list)
             profiles = instance_data.get("profiles", None)
+            config = instance_data.get("config", None)
+            devices = instance_data.get("devices", None)
+            network = instance_data.get("network", None)
+            instance_type = instance_data.get("type", None)
 
             click.secho(
                 f"Creating instance {instance_name} with image {image}...",
                 **CLICK_STYLE["success"],
             )
-            incus.create_instance(instance_name, image, profiles, vm)
+            incus.create_instance(
+                instance_name,
+                image,
+                profiles=profiles,
+                vm=vm,
+                config=config,
+                devices=devices,
+                network=network,
+                instance_type=instance_type,
+            )
 
         # Step 2 -- Create shared folder and provision
         # Loop through all instances, but skip those that don't match the provided name (if any)
