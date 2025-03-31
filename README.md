@@ -2,14 +2,13 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/incus-incant.svg)](https://pypi.org/project/incus-incant/)
 
-Incant is a frontend for [Incus](https://linuxcontainers.org/incus/) that provides a descriptive way to define and manage development environments. It simplifies the creation, configuration, and provisioning of Incus instances using YAML-based configuration files.
+Incant is a frontend for [Incus](https://linuxcontainers.org/incus/) that provides a declarative way to define and manage development environments. It simplifies the creation, configuration, and provisioning of Incus instances using YAML-based configuration files.
 
 
 ## Features
 
 - **Declarative Configuration**: Define your development environments using simple YAML files.
-- **Instance Management**: Easily create, start, stop, and destroy instances.
-- **Provisioning Support**: Run provisioning scripts automatically.
+- **Provisioning Support**: Declare and run provisioning scripts automatically.
 - **Shared Folder Support**: Mount the current working directory into the instance.
 
 ## Installation
@@ -107,7 +106,7 @@ Some technical differences are useful to keep in mind when migrating from Vagran
 
 There are several other projects addressing similar problem spaces. They are shortly described here so that you can determine if Incant is the right tool for you.
 
-* [lxops](https://github.com/melato/lxops) also manages the provisioning of Incus instances using a descriptive configuration format, but provisioning steps are described using [cloud-init](https://cloud-init.io/) configuration files and applied with [cloudconfig](https://github.com/melato/cloudconfig). In contrast, using Incant does not require knowing about cloud-init or fitting into cloud-init's formalism.
+* [lxops](https://github.com/melato/lxops) also manages the provisioning of Incus instances using a declarative configuration format, but provisioning steps are described using [cloud-init](https://cloud-init.io/) configuration files and applied with [cloudconfig](https://github.com/melato/cloudconfig). In contrast, using Incant does not require knowing about cloud-init or fitting into cloud-init's formalism.
 * [terraform-provider-incus](https://github.com/lxc/terraform-provider-incus) is a [Terraform](https://www.terraform.io/) or [OpenTofu](https://opentofu.org/) provider for Incus. Incant uses a more basic scheme for provisioning, and does not require knowing about Terraform or fitting into Terraform's formalism.
 * [cluster-api-provider-lxc (CAPL)](https://github.com/neoaggelos/cluster-api-provider-lxc) is an infrastructure provider for Kubernetes' Cluster API, which enables deploying Kubernetes clusters on Incus. Incant focuses on the more general use case of provisioning system containers or virtual machines outside of the Kubernetes world.
 

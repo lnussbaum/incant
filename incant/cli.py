@@ -10,7 +10,7 @@ from incant import Incant
 )
 @click.pass_context
 def cli(ctx, verbose, config, quiet):
-    """Incant -- an Incus frontend for descriptive development environments"""
+    """Incant -- an Incus frontend for declarative development environments"""
     ctx.ensure_object(dict)
     ctx.obj["OPTIONS"] = {"verbose": verbose, "config": config, "quiet": quiet}
     if verbose:
