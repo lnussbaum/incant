@@ -43,6 +43,11 @@ instances:
       - apt-get update && apt-get install -y curl
 ```
 
+You can also ask Incant to create an example in the current directory:
+
+```sh
+$ incant init
+```
 
 ### Initialize and Start an Instance
 

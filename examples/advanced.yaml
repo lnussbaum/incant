@@ -9,7 +9,7 @@ instances:
       #!/bin/bash
       set -xe
       apt-get update
-      apt-get -y install tmux
+      apt-get -y install curl
   webserver:
     image: images:debian/12
     # Let's use a more complex provisionning here.

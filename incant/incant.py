@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import textwrap
 from pathlib import Path
 import click
 import yaml
@@ -22,7 +23,11 @@ class Incant:
         self.verbose = kwargs.get("verbose", False)
         self.config = kwargs.get("config", None)
         self.quiet = kwargs.get("quiet", False)
-        self.config_data = self.load_config()
+        self.no_config = kwargs.get("no_config", False)
+        if self.no_config:
+            self.config_data = None
+        else:
+            self.config_data = self.load_config()
 
     def find_config_file(self):
         config_paths = [
@@ -257,3 +262,49 @@ class Incant:
 
         for instance_name in self.config_data["instances"]:
             click.echo(f"{instance_name}")
+
+    def incant_init(self):
+        example_config = textwrap.dedent(
+            """\
+            instances:
+              client:
+                image: images:ubuntu/24.04
+                provision: |
+                  #!/bin/bash
+                  set -xe
+                  apt-get update
+                  apt-get -y install curl
+              webserver:
+                image: images:debian/13
+                vm: true # KVM virtual machine, not container
+                # Let's use a more complex provisionning here.
+                devices:
+                  root:
+                    size: 20GB # set size of root device to 20GB
+                config: # incus config options
+                  limits.processes: 100
+                type: c2-m2 # 2 CPUs, 2 GB of RAM
+                provision:
+                  # first, a single command
+                  - apt-get update && apt-get -y install ruby
+                  # then, a script. the path can be relative to the current dir,
+                  # as incant will 'cd' to /incant
+                  # - examples/provision/web_server.rb # disabled to provide a working example
+                  # then a multi-line snippet that will be copied as a temporary file
+                  - |
+                    #!/bin/bash
+                    set -xe
+                    echo Done!
+        """
+        )
+
+        config_path = "incant.yaml"
+
+        if os.path.exists(config_path):
+            print(f"{config_path} already exists. Aborting.")
+            sys.exit(1)
+
+        with open(config_path, "w") as f:
+            f.write(example_config)
+
+        print(f"Example configuration written to {config_path}")

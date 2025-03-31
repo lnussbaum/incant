@@ -62,3 +62,11 @@ def list(ctx):
     """List all instances defined in the configuration."""
     inc = Incant(**ctx.obj["OPTIONS"])
     inc.list_instances()
+
+
+@cli.command()
+@click.pass_context
+def init(ctx):
+    """Create an example configuration file in the current directory."""
+    inc = Incant(**ctx.obj["OPTIONS"], no_config=True)
+    inc.incant_init()
