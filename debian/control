@@ -2,14 +2,15 @@ Source: incant
 Section: admin
 Priority: optional
 Maintainer: Lucas Nussbaum <lucas@debian.org>
-Build-Depends: debhelper-compat (= 13),
+Build-Depends: bash-completion,
+               debhelper-compat (= 13),
                dh-sequence-python3,
                pybuild-plugin-pyproject,
                python3-all,
                python3-click,
                python3-jinja2,
                python3-mako,
-               python3-poetry,
+               python3-poetry-core,
                python3-setuptools,
                python3-yaml
 Testsuite: autopkgtest-pkg-python
