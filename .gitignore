@@ -179,3 +179,5 @@ debian/incant.postinst.debhelper
 debian/incant.prerm.debhelper
 debian/incant.substvars
 debian/incant/
+
+incant.yaml
