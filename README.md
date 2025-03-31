@@ -117,7 +117,7 @@ The main differences between Incant and Vagrant are:
 Some technical differences are useful to keep in mind when migrating from Vagrant to Incant.
 
 * Incant is intended as thin layer on top of Incus, and focuses on provisioning. Once the provisioning has been performed by Incant, you need to use Incus commands such as `incus shell` to work with your instances.
-* Incant shares the current directory as `/incant` inside the instance (compared to Vagrant's sharing of `/vagrant`).
+* Incant shares the current directory as `/incant` inside the instance (compared to Vagrant's sharing of `/vagrant`). Incant tries to share the current directory read-write (using Incus' `shift=true`) but this fails in some cases, such as restricted containers. So there are chances that the directory will only be shared read-only.
 * Incant does not create a user account inside the instance -- you need to use the root account, or create a user account during provisioning (for example, with `adduser --disabled-password --gecos "" incant`)
 * Incant uses a different, YAML-based, description format for instances. [Mako](https://www.makotemplates.org/) or [Jinja2](https://jinja.palletsprojects.com/) templates can be used to generate parts of those YAML configuration files.
 

@@ -116,8 +116,18 @@ class IncusCLI:
             "disk",
             f"source={curdir}",
             "path=/incant",
+            "shift=true",  # First attempt with shift enabled
         ]
-        self._run_command(command)
+
+        try:
+            self._run_command(command, exception_on_failure=True, capture_output=False)
+        except subprocess.CalledProcessError:
+            click.secho(
+                "Shared folder creation failed. Retrying without shift=true...",
+                **CLICK_STYLE["warning"],
+            )
+            command.remove("shift=true")  # Remove shift option and retry
+            self._run_command(command, capture_output=False)
 
     def destroy_instance(self, name: str) -> None:
         """Destroy (stop if needed, then delete) an instance."""
