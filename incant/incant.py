@@ -180,10 +180,11 @@ class Incant:
                 f"Sharing current directory to {instance_name}:/incant ...",
                 **CLICK_STYLE["success"],
             )
-            incus.create_shared_folder(instance_name)
 
-            # Wait for the instance to become ready if specified in config
-            if instance_data.get("wait", False) or instance_data.get("provision", False):
+            # Wait for the instance to become ready if specified in config, or
+            # we want to perform provisioning, or the instance is a VM (for some
+            # reason the VM needs to be running before creating the shared folder)
+            if instance_data.get("wait", False) or instance_data.get("provision", False) or instance_data.get("vm", False):
                 click.secho(
                     f"Waiting for {instance_name} to become ready...",
                     **CLICK_STYLE["info"],
@@ -196,6 +197,8 @@ class Incant:
                         )
                         break
                     time.sleep(1)
+
+            incus.create_shared_folder(instance_name)
 
             if instance_data.get("provision", False):
                 # Automatically run provisioning after instance creation
