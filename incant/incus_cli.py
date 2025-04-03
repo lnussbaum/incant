@@ -129,6 +129,30 @@ class IncusCLI:
             command.remove("shift=true")  # Remove shift option and retry
             self._run_command(command, capture_output=False)
 
+        # Sometimes the creation of shared directories fails (see https://github.com/lxc/incus/issues/1881)
+        # So we retry up to 10 times
+        for attempt in range(10):
+            try:
+                self.exec(
+                    name,
+                    ["grep", "-wq", "/incant", "/proc/mounts"],
+                    exception_on_failure=True,
+                    capture_output=False,
+                )
+                return True
+            except subprocess.CalledProcessError:
+                click.secho(
+                    "Shared folder creation failed (/incant not mounted). Retrying...",
+                    **CLICK_STYLE["warning"],
+                )
+                self._run_command(
+                    ["config", "device", "remove", name, f"{name}_shared_incant"],
+                    capture_output=False,
+                )
+                self._run_command(command, capture_output=False)
+
+        raise Exception("Shared folder creation failed.")
+
     def destroy_instance(self, name: str) -> None:
         """Destroy (stop if needed, then delete) an instance."""
         self._run_command(["delete", "--force", name], allow_failure=True)
