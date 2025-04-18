@@ -27,3 +27,6 @@ line-length = 100
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = "--cov=incant --cov-fail-under=15"
