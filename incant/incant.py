@@ -197,7 +197,8 @@ class Incant:
                         break
                     time.sleep(1)
 
-            incus.create_shared_folder(instance_name)
+            if instance_data.get("shared_folder", True):
+                incus.create_shared_folder(instance_name)
 
             if instance_data.get("provision", False):
                 # Automatically run provisioning after instance creation
