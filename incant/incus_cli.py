@@ -5,16 +5,11 @@ import sys
 import tempfile
 import os
 from pathlib import Path
-import click
 import glob
+import click
 
 # click output styles
-CLICK_STYLE = {
-    "success": {"fg": "green", "bold": True},
-    "info": {"fg": "cyan"},
-    "warning": {"fg": "yellow"},
-    "error": {"fg": "red"},
-}
+from .constants import CLICK_STYLE
 
 
 class IncusCLI:
@@ -25,7 +20,7 @@ class IncusCLI:
     def __init__(self, incus_cmd: str = "incus"):
         self.incus_cmd = incus_cmd
 
-    def _run_command(
+    def _run_command( # pylint: disable=too-many-arguments
         self,
         command: List[str],
         *,
@@ -48,11 +43,10 @@ class IncusCLI:
             if allow_failure:
                 click.secho(error_message, **CLICK_STYLE["error"])
                 return ""
-            elif exception_on_failure:
+            if exception_on_failure:
                 raise
-            else:
-                click.secho(error_message, **CLICK_STYLE["error"])
-                sys.exit(1)
+            click.secho(error_message, **CLICK_STYLE["error"])
+            sys.exit(1)
 
     def exec(self, name: str, command: List[str], cwd: str = None, **kwargs) -> str:
         cmd = ["exec"]
@@ -66,7 +60,7 @@ class IncusCLI:
         command = ["project", "create", name]
         self._run_command(command)
 
-    def create_instance(
+    def create_instance( # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
         self,
         name: str,
         image: str,
@@ -130,9 +124,10 @@ class IncusCLI:
             command.remove("shift=true")  # Remove shift option and retry
             self._run_command(command, capture_output=False)
 
-        # Sometimes the creation of shared directories fails (see https://github.com/lxc/incus/issues/1881)
+        # Sometimes the creation of shared directories fails
+        # (see https://github.com/lxc/incus/issues/1881)
         # So we retry up to 10 times
-        for attempt in range(10):
+        for _ in range(10):
             try:
                 self.exec(
                     name,
@@ -152,7 +147,7 @@ class IncusCLI:
                 )
                 self._run_command(command, capture_output=False)
 
-        raise Exception("Shared folder creation failed.")
+        raise Exception("Shared folder creation failed.") # pylint: disable=broad-exception-raised
 
     def destroy_instance(self, name: str) -> None:
         """Destroy (stop if needed, then delete) an instance."""
@@ -186,8 +181,7 @@ class IncusCLI:
         except subprocess.CalledProcessError as e:
             if e.stderr.strip() == "Error: VM agent isn't currently running":
                 return False
-            else:
-                raise
+            raise
 
     def is_instance_booted(self, name: str) -> bool:
         try:
@@ -230,14 +224,14 @@ class IncusCLI:
 
     def clean_known_hosts(self, name: str) -> None:
         """Remove an instance's name from the known_hosts file and add the new host key."""
-        click.secho(f"Updating {name} in known_hosts to avoid SSH warnings...", **CLICK_STYLE["success"])
+        click.secho(
+            f"Updating {name} in known_hosts to avoid SSH warnings...", **CLICK_STYLE["success"]
+        )
         known_hosts_path = Path.home() / ".ssh" / "known_hosts"
         if known_hosts_path.exists():
             try:
                 # Remove existing entry
-                subprocess.run(
-                    ["ssh-keygen", "-R", name], check=False, capture_output=True
-                )
+                subprocess.run(["ssh-keygen", "-R", name], check=False, capture_output=True)
             except FileNotFoundError:
                 click.secho(
                     "ssh-keygen not found, cannot clean known_hosts.",
@@ -249,14 +243,17 @@ class IncusCLI:
             subprocess.run(
                 [
                     "ssh",
-                    "-o", "StrictHostKeyChecking=accept-new",
-                    "-o", "BatchMode=yes",
-                    "-o", "ConnectTimeout=5",
+                    "-o",
+                    "StrictHostKeyChecking=accept-new",
+                    "-o",
+                    "BatchMode=yes",
+                    "-o",
+                    "ConnectTimeout=5",
                     name,
-                    "exit" # Just connect and exit
+                    "exit",  # Just connect and exit
                 ],
-                check=False, # Don't raise an error if connection fails (e.g., SSH not ready yet)
-                capture_output=True
+                check=False,  # Don't raise an error if connection fails (e.g., SSH not ready yet)
+                capture_output=True,
             )
         except FileNotFoundError:
             click.secho(
@@ -304,7 +301,7 @@ class IncusCLI:
                 # Clean up the local temporary file
                 os.remove(temp_path)
 
-    def copy(
+    def copy( # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         instance_name: str,
         source: str,
@@ -360,7 +357,9 @@ class IncusCLI:
 
         # Determine the content for authorized_keys
         authorized_keys_content = ""
-        source_path_str = ssh_config.get("authorized_keys") if isinstance(ssh_config, dict) else None
+        source_path_str = (
+            ssh_config.get("authorized_keys") if isinstance(ssh_config, dict) else None
+        )
 
         if source_path_str:
             source_path = Path(source_path_str).expanduser()
@@ -398,7 +397,16 @@ class IncusCLI:
                     temp_file.write(authorized_keys_content)
 
                 self._run_command(
-                    ["file", "push", temp_path, f"{name}/root/.ssh/authorized_keys", "--uid", "0", "--gid", "0"],
+                    [
+                        "file",
+                        "push",
+                        temp_path,
+                        f"{name}/root/.ssh/authorized_keys",
+                        "--uid",
+                        "0",
+                        "--gid",
+                        "0",
+                    ],
                     capture_output=False,
                 )
             finally:
@@ -411,7 +419,13 @@ class IncusCLI:
         """Opens an interactive shell in the specified Incus instance."""
         click.secho(f"Opening shell in {name}...", **CLICK_STYLE["success"])
         try:
-            subprocess.run([self.incus_cmd, "shell", name], check=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)
+            subprocess.run(
+                [self.incus_cmd, "shell", name],
+                check=True,
+                stdin=sys.stdin,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
         except subprocess.CalledProcessError as e:
             click.secho(f"Failed to open shell in {name}: {e}", **CLICK_STYLE["error"])
             sys.exit(1)

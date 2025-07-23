@@ -10,12 +10,7 @@ from mako.template import Template
 from incant.incus_cli import IncusCLI
 
 # click output styles
-CLICK_STYLE = {
-    "success": {"fg": "green", "bold": True},
-    "info": {"fg": "cyan"},
-    "warning": {"fg": "yellow"},
-    "error": {"fg": "red"},
-}
+from .constants import CLICK_STYLE
 
 
 class Incant:
@@ -109,7 +104,7 @@ class Incant:
             sys.exit(1)
         try:
             yaml.dump(self.config_data, sys.stdout, default_flow_style=False, sort_keys=False)
-        except Exception as e:
+        except Exception as e: # pylint: disable=broad-exception-caught
             click.secho(f"Error dumping configuration: {e}", **CLICK_STYLE["error"])
 
     def check_config(self):
@@ -317,7 +312,7 @@ class Incant:
             print(f"{config_path} already exists. Aborting.")
             sys.exit(1)
 
-        with open(config_path, "w") as f:
+        with open(config_path, "w", encoding='utf-8') as f:
             f.write(example_config)
 
         print(f"Example configuration written to {config_path}")

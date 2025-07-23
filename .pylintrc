@@ -1,2 +1,5 @@
 [MESSAGES CONTROL]
 disable=missing-docstring
+
+[FORMAT]
+max-line-length=110

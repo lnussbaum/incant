@@ -43,7 +43,7 @@ def provision(ctx, name: str = None):
 @click.argument("name", required=False)
 @click.pass_context
 def shell(ctx, name: str):
-    """Open a shell into an instance. If no name is provided and only one instance is configured, it will select that instance."""
+    """Open a shell into an instance. If no name is given and there is only one instance, use it."""
     inc = Incant(**ctx.obj["OPTIONS"])
     inc.shell(name)
 
@@ -65,9 +65,9 @@ def dump(ctx):
     inc.dump_config()
 
 
-@cli.command()
+@cli.command(name='list')
 @click.pass_context
-def list(ctx):
+def _list_command(ctx):
     """List all instances defined in the configuration."""
     inc = Incant(**ctx.obj["OPTIONS"])
     inc.list_instances()
