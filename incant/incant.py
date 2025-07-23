@@ -224,21 +224,25 @@ class Incant:
             instances_to_provision = self.config_data["instances"]
 
         for instance_name, instance_data in instances_to_provision.items():
+
+            ssh_config = instance_data.get("ssh")
+            if ssh_config:
+                incus.ssh_setup(instance_name, ssh_config)
+
             provisions = instance_data.get("provision", [])
 
-            if not provisions:
+            if provisions:
+                click.secho(f"Provisioning instance {instance_name}...", **CLICK_STYLE["success"])
+
+                # Handle provisioning steps
+                if isinstance(provisions, str):
+                    incus.provision(instance_name, provisions)
+                elif isinstance(provisions, list):
+                    for step in provisions:
+                        click.secho("Running provisioning step ...", **CLICK_STYLE["info"])
+                        incus.provision(instance_name, step)
+            else:
                 click.secho(f"No provisioning found for {instance_name}.", **CLICK_STYLE["info"])
-                continue
-
-            click.secho(f"Provisioning instance {instance_name}...", **CLICK_STYLE["success"])
-
-            # Handle provisioning steps
-            if isinstance(provisions, str):
-                incus.provision(instance_name, provisions)
-            elif isinstance(provisions, list):
-                for step in provisions:
-                    click.secho("Running provisioning step ...", **CLICK_STYLE["info"])
-                    incus.provision(instance_name, step)
 
     def destroy(self, name=None):
         self.check_config()
@@ -274,7 +278,7 @@ class Incant:
         example_config = textwrap.dedent(
             """\
             instances:
-              client:
+              webclient:
                 image: images:ubuntu/24.04
                 provision: |
                   #!/bin/bash
@@ -291,6 +295,7 @@ class Incant:
                 config: # incus config options
                   limits.processes: 100
                 type: c2-m2 # 2 CPUs, 2 GB of RAM
+                ssh: true # configure SSH server. see examples/ssh.yaml for detailed options
                 provision:
                   # first, a single command
                   - apt-get update && apt-get -y install ruby
