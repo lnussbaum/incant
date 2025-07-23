@@ -240,7 +240,10 @@ class Incant:
                 elif isinstance(provisions, list):
                     for step in provisions:
                         click.secho("Running provisioning step ...", **CLICK_STYLE["info"])
-                        incus.provision(instance_name, step)
+                        if isinstance(step, dict) and "copy" in step:
+                            incus.copy(instance_name, **step["copy"])
+                        else:
+                            incus.provision(instance_name, step)
             else:
                 click.secho(f"No provisioning found for {instance_name}.", **CLICK_STYLE["info"])
 
