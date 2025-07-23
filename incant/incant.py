@@ -319,3 +319,26 @@ class Incant:
             f.write(example_config)
 
         print(f"Example configuration written to {config_path}")
+
+    def shell(self, name: str = None):
+        self.check_config()
+
+        incus = IncusCLI()
+
+        instance_name = name
+        if not instance_name:
+            instance_names = list(self.config_data["instances"].keys())
+            if len(instance_names) == 1:
+                instance_name = instance_names[0]
+            else:
+                click.secho(
+                    "Multiple instances found. Please specify an instance name (e.g., incant shell <name>).",
+                    **CLICK_STYLE["error"],
+                )
+                sys.exit(1)
+
+        if instance_name not in self.config_data["instances"]:
+            click.secho(f"Instance '{instance_name}' not found in config.", **CLICK_STYLE["error"])
+            sys.exit(1)
+
+        incus.shell(instance_name)

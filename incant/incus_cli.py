@@ -376,3 +376,12 @@ class IncusCLI:
 
         if ssh_config.get("clean_known_hosts"):
             self.clean_known_hosts(name)
+
+    def shell(self, name: str) -> None:
+        """Opens an interactive shell in the specified Incus instance."""
+        click.secho(f"Opening shell in {name}...", **CLICK_STYLE["success"])
+        try:
+            subprocess.run([self.incus_cmd, "shell", name], check=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError as e:
+            click.secho(f"Failed to open shell in {name}: {e}", **CLICK_STYLE["error"])
+            sys.exit(1)
