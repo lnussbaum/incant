@@ -1,0 +1,8 @@
+instances:
+  networked-instance:
+    image: images:ubuntu/24.04
+    network: lxdbr0 # Replace with your Incus network name
+    provision: |
+      #!/bin/bash
+      set -xe
+      echo "This instance is connected to the lxdbr0 network."
