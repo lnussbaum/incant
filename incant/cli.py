@@ -65,7 +65,7 @@ def dump(ctx):
     inc.dump_config()
 
 
-@cli.command(name='list')
+@cli.command(name="list")
 @click.pass_context
 def _list_command(ctx):
     """List all instances defined in the configuration."""

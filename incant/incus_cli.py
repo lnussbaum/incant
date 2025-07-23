@@ -20,7 +20,7 @@ class IncusCLI:
     def __init__(self, incus_cmd: str = "incus"):
         self.incus_cmd = incus_cmd
 
-    def _run_command( # pylint: disable=too-many-arguments
+    def _run_command(  # pylint: disable=too-many-arguments
         self,
         command: List[str],
         *,
@@ -60,7 +60,7 @@ class IncusCLI:
         command = ["project", "create", name]
         self._run_command(command)
 
-    def create_instance( # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+    def create_instance(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
         self,
         name: str,
         image: str,
@@ -147,7 +147,7 @@ class IncusCLI:
                 )
                 self._run_command(command, capture_output=False)
 
-        raise Exception("Shared folder creation failed.") # pylint: disable=broad-exception-raised
+        raise Exception("Shared folder creation failed.")  # pylint: disable=broad-exception-raised
 
     def destroy_instance(self, name: str) -> None:
         """Destroy (stop if needed, then delete) an instance."""
@@ -301,7 +301,7 @@ class IncusCLI:
                 # Clean up the local temporary file
                 os.remove(temp_path)
 
-    def copy( # pylint: disable=too-many-arguments,too-many-positional-arguments
+    def copy(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         instance_name: str,
         source: str,
