@@ -277,17 +277,16 @@ class Incant:
         example_config = textwrap.dedent(
             """\
             instances:
-              webclient:
+              container-client:
                 image: images:ubuntu/24.04
                 provision: |
                   #!/bin/bash
                   set -xe
                   apt-get update
                   apt-get -y install curl
-              webserver:
+              vm-server:
                 image: images:debian/13
                 vm: true # KVM virtual machine, not container
-                # Let's use a more complex provisionning here.
                 devices:
                   root:
                     size: 20GB # set size of root device to 20GB
