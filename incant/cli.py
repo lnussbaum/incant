@@ -42,6 +42,15 @@ def provision(ctx, name: str = None):
 @cli.command()
 @click.argument("name", required=False)
 @click.pass_context
+def shell(ctx, name: str):
+    """Open a shell into an instance. If no name is provided and only one instance is configured, it will select that instance."""
+    inc = Incant(**ctx.obj["OPTIONS"])
+    inc.shell(name)
+
+
+@cli.command()
+@click.argument("name", required=False)
+@click.pass_context
 def destroy(ctx, name: str):
     """Destroy an instance or all instances if no name is provided."""
     inc = Incant(**ctx.obj["OPTIONS"])
