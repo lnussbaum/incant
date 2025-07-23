@@ -304,6 +304,36 @@ class IncusCLI:
                 # Clean up the local temporary file
                 os.remove(temp_path)
 
+    def copy(
+        self,
+        instance_name: str,
+        source: str,
+        target: str,
+        uid: Optional[int] = None,
+        gid: Optional[int] = None,
+        mode: Optional[str] = None,
+        recursive: bool = False,
+        create_empty_directories: bool = False,
+        compression: str = "none",
+    ) -> None:
+        """Copies a file or directory to an Incus instance."""
+        click.secho(f"Copying {source} to {instance_name}:{target}...", **CLICK_STYLE["success"])
+        command = ["file", "push"]
+        if uid is not None:
+            command.extend(["--uid", str(uid)])
+        if gid is not None:
+            command.extend(["--gid", str(gid)])
+        if mode is not None:
+            command.extend(["--mode", mode])
+        if recursive:
+            command.append("--recursive")
+        if create_empty_directories:
+            command.append("--create-empty-directories")
+        if compression != "none":
+            command.extend(["--compression", compression])
+        command.extend([source, f"{instance_name}{target}"])
+        self._run_command(command, capture_output=False)
+
     def ssh_setup(self, name: str, ssh_config: Union[dict, bool]) -> None:
         """Install SSH server and copy authorized_keys."""
         if isinstance(ssh_config, bool):
