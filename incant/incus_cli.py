@@ -40,10 +40,10 @@ class IncusCLI:
             )
             return result.stdout
         except subprocess.CalledProcessError as e:
-            error_message = f"Failed: {e.stderr.strip()}" if capture_output else "Command failed"
+            error_message = f"Failed: {e.stderr.strip()}" if capture_output else f"Command {full_command} failed"
             if allow_failure:
                 click.secho(error_message, **CLICK_STYLE["error"])
-                return ""
+                return e.stdout
             if exception_on_failure:
                 raise
             click.secho(error_message, **CLICK_STYLE["error"])
