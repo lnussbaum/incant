@@ -225,10 +225,6 @@ class Incant:
 
         for instance_name, instance_data in instances_to_provision.items():
 
-            ssh_config = instance_data.get("ssh")
-            if ssh_config:
-                incus.ssh_setup(instance_name, ssh_config)
-
             provisions = instance_data.get("provision", [])
 
             if provisions:
@@ -242,6 +238,8 @@ class Incant:
                         click.secho("Running provisioning step ...", **CLICK_STYLE["info"])
                         if isinstance(step, dict) and "copy" in step:
                             incus.copy(instance_name, **step["copy"])
+                        elif isinstance(step, dict) and "ssh" in step:
+                            incus.ssh_setup(instance_name, **step["ssh"])
                         else:
                             incus.provision(instance_name, step)
             else:
@@ -297,8 +295,8 @@ class Incant:
                 config: # incus config options
                   limits.processes: 100
                 type: c2-m2 # 2 CPUs, 2 GB of RAM
-                ssh: true # configure SSH server. see examples/ssh.yaml for detailed options
                 provision:
+                  - ssh: true # configure SSH server. see examples/ssh.yaml for detailed options
                   # first, a single command
                   - apt-get update && apt-get -y install ruby
                   # then, a script. the path can be relative to the current dir,

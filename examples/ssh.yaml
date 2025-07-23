@@ -1,0 +1,6 @@
+instances:
+  sshd:
+    image: images:ubuntu/24.04
+    ssh:
+      clean_known_hosts: true
+      authorized_keys: path_to_file
