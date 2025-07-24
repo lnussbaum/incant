@@ -4,6 +4,7 @@ from typing import List, Dict, Optional, Union
 import sys
 import tempfile
 import os
+import time
 from pathlib import Path
 import glob
 import click
@@ -128,24 +129,30 @@ class IncusCLI:
         # (see https://github.com/lxc/incus/issues/1881)
         # So we retry up to 10 times
         for _ in range(10):
-            try:
-                self.exec(
-                    name,
-                    ["grep", "-wq", "/incant", "/proc/mounts"],
-                    exception_on_failure=True,
-                    capture_output=False,
-                )
-                return True
-            except subprocess.CalledProcessError:
-                click.secho(
-                    "Shared folder creation failed (/incant not mounted). Retrying...",
-                    **CLICK_STYLE["warning"],
-                )
-                self._run_command(
-                    ["config", "device", "remove", name, f"{name}_shared_incant"],
-                    capture_output=False,
-                )
-                self._run_command(command, capture_output=False)
+            # First, check a few times if the mount is just slow
+            for attempt in range(3):
+                try:
+                    self.exec(
+                        name,
+                        ["grep", "-wq", "/incant", "/proc/mounts"],
+                        exception_on_failure=True,
+                        capture_output=False,
+                    )
+                    return True  # Success!
+                except subprocess.CalledProcessError:
+                    if attempt < 2:
+                        time.sleep(1)
+                    # On last attempt, fall through to re-create device
+
+            click.secho(
+                "Shared folder creation failed (/incant not mounted). Retrying...",
+                **CLICK_STYLE["warning"],
+            )
+            self._run_command(
+                ["config", "device", "remove", name, f"{name}_shared_incant"],
+                capture_output=False,
+            )
+            self._run_command(command, capture_output=False)
 
         raise Exception("Shared folder creation failed.")  # pylint: disable=broad-exception-raised
 
