@@ -233,7 +233,7 @@ class Incant:
                         if isinstance(step, dict) and "copy" in step:
                             incus.copy(instance_name, **step["copy"])
                         elif isinstance(step, dict) and "ssh" in step:
-                            incus.ssh_setup(instance_name, **step["ssh"])
+                            incus.ssh_setup(instance_name, step["ssh"])
                         else:
                             click.secho("Running provisioning step ...", **CLICK_STYLE["info"])
                             incus.provision(instance_name, step)
