@@ -4,8 +4,8 @@ instances:
     vm: true
     wait: true # wait for instance to be ready (incus agent running)
     shared_folder: false # disable shared folder (/incant) setup
-  deb10:
-    image: images:debian/10
+  deb12:
+    image: images:debian/12
     provision: |
       #!/bin/bash
       set -xe
