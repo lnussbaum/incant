@@ -11,6 +11,7 @@ import click
 
 # click output styles
 from .constants import CLICK_STYLE
+from .exceptions import IncusCommandError, InstanceError
 
 
 class IncusCLI:
@@ -27,7 +28,6 @@ class IncusCLI:
         *,
         capture_output: bool = True,
         allow_failure: bool = False,
-        exception_on_failure: bool = False,
         quiet: bool = False,
     ) -> str:
         """Executes an Incus CLI command and returns the output. Optionally allows failure."""
@@ -43,15 +43,12 @@ class IncusCLI:
             error_message = (
                 f"Failed: {e.stderr.strip()}"
                 if capture_output
-                else f"Command {full_command} failed"
+                else f"Command {' '.join(full_command)} failed"
             )
             if allow_failure:
                 click.secho(error_message, **CLICK_STYLE["error"])
                 return e.stdout
-            if exception_on_failure:
-                raise
-            click.secho(error_message, **CLICK_STYLE["error"])
-            sys.exit(1)
+            raise IncusCommandError(error_message, command=" ".join(full_command)) from e
 
     def exec(self, name: str, command: List[str], cwd: str = None, **kwargs) -> str:
         cmd = ["exec"]
@@ -120,8 +117,8 @@ class IncusCLI:
         ]
 
         try:
-            self._run_command(command, exception_on_failure=True, capture_output=False)
-        except subprocess.CalledProcessError:
+            self._run_command(command, capture_output=False)
+        except IncusCommandError:
             click.secho(
                 "Shared folder creation failed. Retrying without shift=true...",
                 **CLICK_STYLE["warning"],
@@ -139,11 +136,10 @@ class IncusCLI:
                     self.exec(
                         name,
                         ["grep", "-wq", "/incant", "/proc/mounts"],
-                        exception_on_failure=True,
                         capture_output=False,
                     )
                     return True  # Success!
-                except subprocess.CalledProcessError:
+                except IncusCommandError:
                     if attempt < 2:
                         time.sleep(1)
                     # On last attempt, fall through to re-create device
@@ -158,7 +154,7 @@ class IncusCLI:
             )
             self._run_command(command, capture_output=False)
 
-        raise Exception("Shared folder creation failed.")  # pylint: disable=broad-exception-raised
+        raise InstanceError("Shared folder creation failed.")
 
     def destroy_instance(self, name: str) -> None:
         """Destroy (stop if needed, then delete) an instance."""
@@ -175,7 +171,6 @@ class IncusCLI:
                 f"/1.0/instances/{name}?project={self.get_current_project()}&recursion=1",
             ],
             quiet=True,
-            exception_on_failure=True,
         )
         return json.loads(output)
 
@@ -187,16 +182,16 @@ class IncusCLI:
 
     def is_agent_usable(self, name: str) -> bool:
         try:
-            self.exec(name, ["true"], exception_on_failure=True, quiet=True)
+            self.exec(name, ["true"], quiet=True)
             return True
-        except subprocess.CalledProcessError as e:
+        except IncusCommandError as e:
             if e.stderr.strip() == "Error: VM agent isn't currently running":
                 return False
             raise
 
     def is_instance_booted(self, name: str) -> bool:
         try:
-            self.exec(name, ["which", "systemctl"], quiet=True, exception_on_failure=True)
+            self.exec(name, ["which", "systemctl"], quiet=True)
         except Exception as exc:
             # no systemctl in instance. We assume it booted
             # return True
@@ -241,11 +236,8 @@ class IncusCLI:
             try:
                 # Remove existing entry
                 subprocess.run(["ssh-keygen", "-R", name], check=False, capture_output=True)
-            except FileNotFoundError:
-                click.secho(
-                    "ssh-keygen not found, cannot clean known_hosts.",
-                    **CLICK_STYLE["warning"],
-                )
+            except FileNotFoundError as e:
+                raise IncusCommandError("ssh-keygen not found, cannot clean known_hosts.") from e
 
         # Initiate a connection to accept the new host key
         try:
@@ -350,10 +342,9 @@ class IncusCLI:
             self.exec(
                 name,
                 ["sh", "-c", "apt-get update && apt-get -y install ssh"],
-                exception_on_failure=True,
                 capture_output=False,
             )
-        except subprocess.CalledProcessError:
+        except IncusCommandError:
             click.secho(
                 f"Failed to install SSH server in {name}. "
                 "Currently, only apt-based systems are supported for ssh-setup.",
@@ -436,5 +427,4 @@ class IncusCLI:
                 stderr=sys.stderr,
             )
         except subprocess.CalledProcessError as e:
-            click.secho(f"Failed to open shell in {name}: {e}", **CLICK_STYLE["error"])
-            sys.exit(1)
+            raise InstanceError(f"Failed to open shell in {name}: {e}") from e

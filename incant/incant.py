@@ -11,13 +11,13 @@ from incant.incus_cli import IncusCLI
 
 # click output styles
 from .constants import CLICK_STYLE
+from .exceptions import ConfigurationError, IncantError, InstanceError
 
 
 class Incant:
     def __init__(self, **kwargs):
         self.verbose = kwargs.get("verbose", False)
         self.config = kwargs.get("config", None)
-        self.quiet = kwargs.get("quiet", False)
         self.no_config = kwargs.get("no_config", False)
         if self.no_config:
             self.config_data = None
@@ -60,8 +60,6 @@ class Incant:
             config_file = self.find_config_file()
 
             if config_file is None:
-                if not self.quiet:
-                    click.secho("No config file found to load.", **CLICK_STYLE["error"])
                 return None
 
             # Read the config file content
@@ -93,15 +91,13 @@ class Incant:
                 )
             return config_data
         except yaml.YAMLError as e:
-            click.secho(f"Error parsing YAML file: {e}", **CLICK_STYLE["error"])
-            return None
+            raise ConfigurationError(f"Error parsing YAML file: {e}") from e
         except FileNotFoundError:
-            click.secho(f"Config file not found: {config_file}", **CLICK_STYLE["error"])
-            sys.exit(1)
+            raise ConfigurationError(f"Config file not found: {config_file}")
 
     def dump_config(self):
         if not self.config_data:
-            sys.exit(1)
+            raise ConfigurationError("No configuration to dump")
         try:
             yaml.dump(self.config_data, sys.stdout, default_flow_style=False, sort_keys=False)
         except Exception as e:  # pylint: disable=broad-exception-caught
@@ -109,10 +105,9 @@ class Incant:
 
     def check_config(self):
         if not self.config_data:
-            sys.exit(1)
+            raise ConfigurationError("No configuration loaded.")
         if "instances" not in self.config_data:
-            click.secho("No instances found in config.", **CLICK_STYLE["error"])
-            sys.exit(1)
+            raise ConfigurationError("No instances found in config")
 
     def up(self, name=None):
         self.check_config()
@@ -121,8 +116,7 @@ class Incant:
 
         # If a name is provided, check if the instance exists in the config
         if name and name not in self.config_data["instances"]:
-            click.secho(f"Instance '{name}' not found in config.", **CLICK_STYLE["error"])
-            return
+            raise InstanceError(f"Instance '{name}' not found in config.")
 
         # Step 1 -- Create instances (we do this for all instances so that they can boot in parallel)
         # Loop through all instances, but skip those that don't match the provided name (if any)
@@ -212,8 +206,7 @@ class Incant:
         if name:
             # If a specific instance name is provided, check if it exists
             if name not in self.config_data["instances"]:
-                click.echo(f"Instance '{name}' not found in config.")
-                return
+                raise InstanceError(f"Instance '{name}' not found in config.")
             instances_to_provision = {name: self.config_data["instances"][name]}
         else:
             # If no name is provided, provision all instances
@@ -248,8 +241,7 @@ class Incant:
 
         # If a name is provided, check if the instance exists in the config
         if name and name not in self.config_data["instances"]:
-            click.secho(f"Instance '{name}' not found in config.", **CLICK_STYLE["error"])
-            return
+            raise InstanceError(f"Instance '{name}' not found in config.")
 
         for instance_name, _instance_data in self.config_data["instances"].items():
             # If a name is provided, only process the matching instance
@@ -310,8 +302,7 @@ class Incant:
         config_path = "incant.yaml"
 
         if os.path.exists(config_path):
-            print(f"{config_path} already exists. Aborting.")
-            sys.exit(1)
+            raise IncantError(f"{config_path} already exists. Aborting.")
 
         with open(config_path, "w", encoding="utf-8") as f:
             f.write(example_config)
@@ -329,14 +320,9 @@ class Incant:
             if len(instance_names) == 1:
                 instance_name = instance_names[0]
             else:
-                click.secho(
-                    "Multiple instances found. Please specify an instance name (e.g., incant shell <name>).",
-                    **CLICK_STYLE["error"],
-                )
-                sys.exit(1)
+                raise InstanceError("Multiple instances found. Please specify an instance name")
 
         if instance_name not in self.config_data["instances"]:
-            click.secho(f"Instance '{instance_name}' not found in config.", **CLICK_STYLE["error"])
-            sys.exit(1)
+            raise InstanceError(f"Instance '{instance_name}' not found in config")
 
         incus.shell(instance_name)
