@@ -1,126 +1,40 @@
 import os
-import sys
 import time
 import textwrap
-from pathlib import Path
 import click
-import yaml
-from jinja2 import Environment, FileSystemLoader
-from mako.template import Template
 from incant.incus_cli import IncusCLI
+from .config_manager import ConfigManager
 
 # click output styles
 from .constants import CLICK_STYLE
-from .exceptions import ConfigurationError, IncantError, InstanceError
+from .exceptions import IncantError, InstanceError
 
 
 class Incant:
     def __init__(self, **kwargs):
         self.verbose = kwargs.get("verbose", False)
-        self.config = kwargs.get("config", None)
-        self.no_config = kwargs.get("no_config", False)
-        if self.no_config:
-            self.config_data = None
-        else:
-            self.config_data = self.load_config()
-
-    def find_config_file(self):
-        config_paths = [
-            (
-                Path(self.config) if self.config else None
-            ),  # First, check if a config is passed directly
-            *(
-                Path(os.getcwd()) / f"incant{ext}"
-                for ext in [
-                    ".yaml",
-                    ".yaml.j2",
-                    ".yaml.mako",
-                ]
-            ),
-            *(
-                Path(os.getcwd()) / f".incant{ext}"
-                for ext in [
-                    ".yaml",
-                    ".yaml.j2",
-                    ".yaml.mako",
-                ]
-            ),
-        ]
-        for path in filter(None, config_paths):
-            if path.is_file():
-                if self.verbose:
-                    click.secho(f"Config found at: {path}", **CLICK_STYLE["success"])
-                return path
-        # If no config is found, return None
-        return None
-
-    def load_config(self):
-        try:
-            # Find the config file first
-            config_file = self.find_config_file()
-
-            if config_file is None:
-                return None
-
-            # Read the config file content
-            with open(config_file, "r", encoding="utf-8") as file:
-                content = file.read()
-
-            # If the config file ends with .yaml.j2, use Jinja2
-            if config_file.suffix == ".j2":
-                if self.verbose:
-                    click.secho("Using Jinja2 template processing...", **CLICK_STYLE["info"])
-                env = Environment(loader=FileSystemLoader(os.getcwd()))
-                template = env.from_string(content)
-                content = template.render()
-
-            # If the config file ends with .yaml.mako, use Mako
-            elif config_file.suffix == ".mako":
-                if self.verbose:
-                    click.secho("Using Mako template processing...", **CLICK_STYLE["info"])
-                template = Template(content)
-                content = template.render()
-
-            # Load the YAML data from the processed content
-            config_data = yaml.safe_load(content)
-
-            if self.verbose:
-                click.secho(
-                    f"Config loaded successfully from {config_file}",
-                    **CLICK_STYLE["success"],
-                )
-            return config_data
-        except yaml.YAMLError as e:
-            raise ConfigurationError(f"Error parsing YAML file: {e}") from e
-        except FileNotFoundError:
-            raise ConfigurationError(f"Config file not found: {config_file}")
+        self.config_manager = ConfigManager(
+            config_path=kwargs.get("config", None),
+            verbose=self.verbose,
+            no_config=kwargs.get("no_config", False)
+        )
+        self.config_manager.config_data = self.config_manager.config_data
 
     def dump_config(self):
-        if not self.config_data:
-            raise ConfigurationError("No configuration to dump")
-        try:
-            yaml.dump(self.config_data, sys.stdout, default_flow_style=False, sort_keys=False)
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            click.secho(f"Error dumping configuration: {e}", **CLICK_STYLE["error"])
-
-    def check_config(self):
-        if not self.config_data:
-            raise ConfigurationError("No configuration loaded.")
-        if "instances" not in self.config_data:
-            raise ConfigurationError("No instances found in config")
+        self.config_manager.dump_config()
 
     def up(self, name=None):
-        self.check_config()
+        self.config_manager.check_config()
 
         incus = IncusCLI()
 
         # If a name is provided, check if the instance exists in the config
-        if name and name not in self.config_data["instances"]:
+        if name and name not in self.config_manager.config_data["instances"]:
             raise InstanceError(f"Instance '{name}' not found in config.")
 
         # Step 1 -- Create instances (we do this for all instances so that they can boot in parallel)
         # Loop through all instances, but skip those that don't match the provided name (if any)
-        for instance_name, instance_data in self.config_data["instances"].items():
+        for instance_name, instance_data in self.config_manager.config_data["instances"].items():
             # If a name is provided, only process the matching instance
             if name and instance_name != name:
                 continue
@@ -155,7 +69,7 @@ class Incant:
 
         # Step 2 -- Create shared folder and provision
         # Loop through all instances, but skip those that don't match the provided name (if any)
-        for instance_name, instance_data in self.config_data["instances"].items():
+        for instance_name, instance_data in self.config_manager.config_data["instances"].items():
             # If a name is provided, only process the matching instance
             if name and instance_name != name:
                 continue
@@ -199,18 +113,18 @@ class Incant:
                 self.provision(instance_name)
 
     def provision(self, name: str = None):
-        self.check_config()
+        self.config_manager.check_config()
 
         incus = IncusCLI()
 
         if name:
             # If a specific instance name is provided, check if it exists
-            if name not in self.config_data["instances"]:
+            if name not in self.config_manager.config_data["instances"]:
                 raise InstanceError(f"Instance '{name}' not found in config.")
-            instances_to_provision = {name: self.config_data["instances"][name]}
+            instances_to_provision = {name: self.config_manager.config_data["instances"][name]}
         else:
             # If no name is provided, provision all instances
-            instances_to_provision = self.config_data["instances"]
+            instances_to_provision = self.config_manager.config_data["instances"]
 
         for instance_name, instance_data in instances_to_provision.items():
 
@@ -235,15 +149,15 @@ class Incant:
                 click.secho(f"No provisioning found for {instance_name}.", **CLICK_STYLE["info"])
 
     def destroy(self, name=None):
-        self.check_config()
+        self.config_manager.check_config()
 
         incus = IncusCLI()
 
         # If a name is provided, check if the instance exists in the config
-        if name and name not in self.config_data["instances"]:
+        if name and name not in self.config_manager.config_data["instances"]:
             raise InstanceError(f"Instance '{name}' not found in config.")
 
-        for instance_name, _instance_data in self.config_data["instances"].items():
+        for instance_name, _instance_data in self.config_manager.config_data["instances"].items():
             # If a name is provided, only process the matching instance
             if name and instance_name != name:
                 continue
@@ -258,9 +172,9 @@ class Incant:
 
     def list_instances(self):
         """List all instances defined in the configuration."""
-        self.check_config()
+        self.config_manager.check_config()
 
-        for instance_name in self.config_data["instances"]:
+        for instance_name in self.config_manager.config_data["instances"]:
             click.echo(f"{instance_name}")
 
     def incant_init(self):
@@ -310,19 +224,19 @@ class Incant:
         print(f"Example configuration written to {config_path}")
 
     def shell(self, name: str = None):
-        self.check_config()
+        self.config_manager.check_config()
 
         incus = IncusCLI()
 
         instance_name = name
         if not instance_name:
-            instance_names = list(self.config_data["instances"].keys())
+            instance_names = list(self.config_manager.config_data["instances"].keys())
             if len(instance_names) == 1:
                 instance_name = instance_names[0]
             else:
                 raise InstanceError("Multiple instances found. Please specify an instance name")
 
-        if instance_name not in self.config_data["instances"]:
+        if instance_name not in self.config_manager.config_data["instances"]:
             raise InstanceError(f"Instance '{instance_name}' not found in config")
 
         incus.shell(instance_name)
