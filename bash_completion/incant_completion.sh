@@ -10,12 +10,12 @@ _incant_completions() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     
     # Commands like up, provision, destroy, list, dump
-    opts="up provision destroy list dump init"
+    opts="up provision destroy shell list dump init"
 
 
     # Handle auto-completion based on the previous command word
     case "${prev}" in
-        "up"|"provision"|"destroy")
+        "up"|"provision"|"destroy"|"shell")
             # Fetch list of instances from the 'incant list' command
             instance_names=$(incant --quiet list)
             if [ $? -ne 0 ]; then
