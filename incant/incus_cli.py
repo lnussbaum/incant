@@ -40,10 +40,10 @@ class IncusCLI:
             )
             return result.stdout
         except subprocess.CalledProcessError as e:
-            error_message = f"Failed: {e.stderr.strip()}" if capture_output else "Command failed"
+            error_message = f"Failed: {e.stderr.strip()}" if capture_output else f"Command {full_command} failed"
             if allow_failure:
                 click.secho(error_message, **CLICK_STYLE["error"])
-                return ""
+                return e.stdout
             if exception_on_failure:
                 raise
             click.secho(error_message, **CLICK_STYLE["error"])
@@ -197,16 +197,14 @@ class IncusCLI:
             # no systemctl in instance. We assume it booted
             # return True
             raise RuntimeError("systemctl not found in instance") from exc
-        try:
-            systemctl = self.exec(
-                name,
-                ["systemctl", "is-system-running"],
-                quiet=True,
-                exception_on_failure=True,
-            ).strip()
-        except subprocess.CalledProcessError:
-            return False
-        return systemctl == "running"
+        systemctl = self.exec(
+            name,
+            ["systemctl", "is-system-running"],
+            quiet=True,
+            allow_failure=True,
+        ).strip()
+
+        return systemctl in ["running", "degraded"]
 
     def is_instance_ready(self, name: str, verbose: bool = False) -> bool:
         if not self.is_agent_running(name):

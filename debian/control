@@ -11,6 +11,7 @@ Build-Depends: bash-completion,
                python3-jinja2,
                python3-mako,
                python3-poetry-core,
+               python3-pytest,
                python3-setuptools,
                python3-yaml
 Testsuite: autopkgtest-pkg-python
