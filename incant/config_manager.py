@@ -126,8 +126,7 @@ class ConfigManager:
 
         if key == "copy" and not isinstance(value, dict):
             raise ConfigurationError(
-                f"Provisioning 'copy' step in instance '{name}' "
-                "must have a dictionary value."
+                f"Provisioning 'copy' step in instance '{name}' " "must have a dictionary value."
             )
 
         if key == "copy" and isinstance(value, dict):
@@ -135,11 +134,73 @@ class ConfigManager:
             missing = [field for field in required_fields if field not in value]
             if missing:
                 raise ConfigurationError(
-                    f"Provisioning 'copy' step in instance '{name}' is missing required field(s): {', '.join(missing)}."
+                    (
+                        f"Provisioning 'copy' step in instance '{name}' is missing required "
+                        f"field(s): {', '.join(missing)}."
+                    )
                 )
             if not isinstance(value["source"], str) or not isinstance(value["target"], str):
                 raise ConfigurationError(
-                    f"Provisioning 'copy' step in instance '{name}' must have string 'source' and 'target'."
+                    (
+                        f"Provisioning 'copy' step in instance '{name}' must have string "
+                        "'source' and 'target'."
+                    )
+                )
+            # Optional fields type checks
+            if "uid" in value and not isinstance(value["uid"], int):
+                raise ConfigurationError(
+                    (
+                        f"Provisioning 'copy' step in instance '{name}' has invalid 'uid': "
+                        "must be an integer."
+                    )
+                )
+            if "gid" in value and not isinstance(value["gid"], int):
+                raise ConfigurationError(
+                    (
+                        f"Provisioning 'copy' step in instance '{name}' has invalid 'gid': "
+                        "must be an integer."
+                    )
+                )
+            if "mode" in value:
+                mode_val = value["mode"]
+                if not isinstance(mode_val, str):
+                    raise ConfigurationError(
+                        (
+                            f"Provisioning 'copy' step in instance '{name}' has invalid 'mode': "
+                            "must be a string like '0644'."
+                        )
+                    )
+                import re  # local import to limit module scope
+
+                if re.fullmatch(r"[0-7]{3,4}", mode_val) is None:
+                    raise ConfigurationError(
+                        (
+                            f"Provisioning 'copy' step in instance '{name}' has invalid 'mode': "
+                            "must be 3-4 octal digits (e.g., '644' or '0644')."
+                        )
+                    )
+            if "recursive" in value and not isinstance(value["recursive"], bool):
+                raise ConfigurationError(
+                    (
+                        f"Provisioning 'copy' step in instance '{name}' has invalid 'recursive': "
+                        "must be a boolean."
+                    )
+                )
+            if "create_empty_directories" in value and not isinstance(
+                value["create_empty_directories"], bool
+            ):
+                raise ConfigurationError(
+                    (
+                        f"Provisioning 'copy' step in instance '{name}' has invalid "
+                        "'create_empty_directories': must be a boolean."
+                    )
+                )
+            if "compression" in value and not isinstance(value["compression"], str):
+                raise ConfigurationError(
+                    (
+                        f"Provisioning 'copy' step in instance '{name}' has invalid 'compression': "
+                        "must be a string."
+                    )
                 )
 
         if key == "ssh" and not isinstance(value, (bool, dict)):

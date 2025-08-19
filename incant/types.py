@@ -1,4 +1,5 @@
 """This module defines common types for incant."""
+
 from typing import Any, TypeAlias, Union
 
 InstanceDict: TypeAlias = dict[str, dict[str, Any]]

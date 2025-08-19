@@ -277,3 +277,98 @@ def test_validate_provision_invalid_ssh_value(tmp_path, mock_reporter):
     cm = ConfigManager(mock_reporter, config_path=str(config_file))
     with pytest.raises(ConfigurationError, match="must have a boolean or dictionary value"):
         cm.validate_config()
+
+
+def test_validate_provision_copy_optional_fields_valid(tmp_path, mock_reporter):
+    config = {
+        "instances": {
+            "test-instance": {
+                "image": "ubuntu/22.04",
+                "provision": [
+                    {
+                        "copy": {
+                            "source": "a",
+                            "target": "/b",
+                            "uid": 0,
+                            "gid": 0,
+                            "mode": "0644",
+                            "recursive": False,
+                        }
+                    }
+                ],
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_reporter, config_path=str(config_file))
+    cm.validate_config()
+
+
+def test_validate_provision_copy_optional_fields_invalid_types(tmp_path, mock_reporter):
+    bad_cases = [
+        ({"uid": "0"}, "uid"),
+        ({"gid": "0"}, "gid"),
+        ({"mode": 644}, "mode"),
+        ({"mode": "0888"}, "mode"),
+        ({"recursive": "yes"}, "recursive"),
+    ]
+    for extra, field in bad_cases:
+        config = {
+            "instances": {
+                "test-instance": {
+                    "image": "ubuntu/22.04",
+                    "provision": [{"copy": {"source": "a", "target": "/b", **extra}}],
+                }
+            }
+        }
+        config_file = tmp_path / "incant.yaml"
+        config_file.write_text(yaml.dump(config))
+        cm = ConfigManager(mock_reporter, config_path=str(config_file))
+        with pytest.raises(ConfigurationError):
+            cm.validate_config()
+
+
+def test_validate_provision_copy_new_options_valid(tmp_path, mock_reporter):
+    config = {
+        "instances": {
+            "test-instance": {
+                "image": "ubuntu/22.04",
+                "provision": [
+                    {
+                        "copy": {
+                            "source": "a",
+                            "target": "/b",
+                            "create_empty_directories": True,
+                            "compression": "gzip",
+                        }
+                    }
+                ],
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_reporter, config_path=str(config_file))
+    cm.validate_config()
+
+
+def test_validate_provision_copy_new_options_invalid(tmp_path, mock_reporter):
+    bad_cases = [
+        ({"create_empty_directories": "yes"}, "create_empty_directories"),
+        ({"compression": 1}, "compression"),
+    ]
+    for extra, field in bad_cases:
+        config = {
+            "instances": {
+                "test-instance": {
+                    "image": "ubuntu/22.04",
+                    "provision": [{"copy": {"source": "a", "target": "/b", **extra}}],
+                }
+            }
+        }
+        config_file = tmp_path / "incant.yaml"
+        config_file.write_text(yaml.dump(config))
+        cm = ConfigManager(mock_reporter, config_path=str(config_file))
+        with pytest.raises(ConfigurationError):
+            cm.validate_config()
