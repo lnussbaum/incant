@@ -7,8 +7,8 @@ Incant is a frontend for [Incus](https://linuxcontainers.org/incus/) that provid
 ## Features
 
 - **Declarative Configuration**: Define your development environments using simple YAML files.
-- **Provisioning Support**: Declare and run provisioning scripts automatically.
 - **Shared Folder Support**: Mount the current working directory into the instance.
+- **Provisioning Support**: Declare and run provisioning scripts automatically, copy files to the instance, and set up an SSH server automatically.
 
 ## Installation
 
