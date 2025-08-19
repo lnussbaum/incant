@@ -80,7 +80,7 @@ class Incant:
             )
 
             # Wait for the instance to become ready if specified in config, or
-            # we want to perform provisioning, or the instance is a VM (for some
+            # if we want to perform provisioning, or if the instance is a VM (for some
             # reason the VM needs to be running before creating the shared folder)
             if (
                 instance_data.get("wait", False)
