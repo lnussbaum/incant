@@ -144,6 +144,7 @@ class ProvisionManager:
                     "/root/.ssh/authorized_keys",
                     uid=0,
                     gid=0,
+                    quiet=True,
                 )
             finally:
                 os.remove(temp_path)
