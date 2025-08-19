@@ -75,6 +75,8 @@ class IncusCLI:
         instance_type: Optional[str] = None,
     ) -> None:
         """Creates a new instance with optional parameters."""
+        if self.is_instance(name):
+            raise InstanceError(f'Instance "{name}" already exists.')
         command = ["launch", image, name]
 
         if vm:
