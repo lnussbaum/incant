@@ -2,7 +2,7 @@ import sys
 import click
 from incant import Incant
 from .exceptions import IncantError
-from .constants import CLICK_STYLE
+from .reporter import Reporter
 
 
 @click.group(invoke_without_command=True)
@@ -12,21 +12,24 @@ from .constants import CLICK_STYLE
 def cli(ctx, verbose, config):
     """Incant -- an Incus frontend for declarative development environments"""
     ctx.ensure_object(dict)
-    ctx.obj["OPTIONS"] = {"verbose": verbose, "config": config}
+    reporter = Reporter()
+    ctx.obj["REPORTER"] = reporter
+    ctx.obj["INCANT"] = Incant(reporter=reporter, verbose=verbose, config=config)
+
     if verbose:
-        click.echo(
+        reporter.info(
             f"Using config file: {config}" if config else "No config file provided, using defaults."
         )
     if ctx.invoked_subcommand is None:
-        click.echo(ctx.get_help())  # Show help message if no command is passed
+        click.echo(ctx.get_help())
 
 
-def _handle_error(error: Exception) -> None:
+def _handle_error(error: Exception, reporter: Reporter) -> None:
     """Handle errors consistently across operations."""
     if isinstance(error, IncantError):
-        click.secho(f"Error: {error}", **CLICK_STYLE["error"])
+        reporter.error(f"Error: {error}")
     else:
-        click.secho(f"An unexpected error occurred: {error}", **CLICK_STYLE["error"])
+        reporter.error(f"An unexpected error occurred: {error}")
     sys.exit(1)
 
 
@@ -36,10 +39,9 @@ def _handle_error(error: Exception) -> None:
 def up(ctx, name: str):
     """Start and provision an instance or all instances if no name is provided."""
     try:
-        inc = Incant(**ctx.obj["OPTIONS"])
-        inc.up(name)
+        ctx.obj["INCANT"].up(name)
     except IncantError as e:
-        _handle_error(e)
+        _handle_error(e, ctx.obj["REPORTER"])
 
 
 @cli.command()
@@ -48,10 +50,9 @@ def up(ctx, name: str):
 def provision(ctx, name: str = None):
     """Provision an instance or all instances if no name is provided."""
     try:
-        inc = Incant(**ctx.obj["OPTIONS"])
-        inc.provision(name)
+        ctx.obj["INCANT"].provision(name)
     except IncantError as e:
-        _handle_error(e)
+        _handle_error(e, ctx.obj["REPORTER"])
 
 
 @cli.command()
@@ -60,10 +61,9 @@ def provision(ctx, name: str = None):
 def shell(ctx, name: str):
     """Open a shell into an instance. If no name is given and there is only one instance, use it."""
     try:
-        inc = Incant(**ctx.obj["OPTIONS"])
-        inc.shell(name)
+        ctx.obj["INCANT"].shell(name)
     except IncantError as e:
-        _handle_error(e)
+        _handle_error(e, ctx.obj["REPORTER"])
 
 
 @cli.command()
@@ -72,10 +72,9 @@ def shell(ctx, name: str):
 def destroy(ctx, name: str):
     """Destroy an instance or all instances if no name is provided."""
     try:
-        inc = Incant(**ctx.obj["OPTIONS"])
-        inc.destroy(name)
+        ctx.obj["INCANT"].destroy(name)
     except IncantError as e:
-        _handle_error(e)
+        _handle_error(e, ctx.obj["REPORTER"])
 
 
 @cli.command()
@@ -83,10 +82,9 @@ def destroy(ctx, name: str):
 def dump(ctx):
     """Show the generated configuration file."""
     try:
-        inc = Incant(**ctx.obj["OPTIONS"])
-        inc.dump_config()
+        ctx.obj["INCANT"].dump_config()
     except IncantError as e:
-        _handle_error(e)
+        _handle_error(e, ctx.obj["REPORTER"])
 
 
 @cli.command(name="list")
@@ -94,10 +92,9 @@ def dump(ctx):
 def _list_command(ctx):
     """List all instances defined in the configuration."""
     try:
-        inc = Incant(**ctx.obj["OPTIONS"])
-        inc.list_instances()
+        ctx.obj["INCANT"].list_instances()
     except IncantError as e:
-        _handle_error(e)
+        _handle_error(e, ctx.obj["REPORTER"])
 
 
 @cli.command()
@@ -105,7 +102,7 @@ def _list_command(ctx):
 def init(ctx):
     """Create an example configuration file in the current directory."""
     try:
-        inc = Incant(**ctx.obj["OPTIONS"], no_config=True)
+        inc = Incant(reporter=ctx.obj["REPORTER"], no_config=True)
         inc.incant_init()
     except IncantError as e:
-        _handle_error(e)
+        _handle_error(e, ctx.obj["REPORTER"])

@@ -2,17 +2,23 @@ import os
 import sys
 from pathlib import Path
 
-import click
 import yaml
 from jinja2 import Environment, FileSystemLoader
 from mako.template import Template
 
-from .constants import CLICK_STYLE
 from .exceptions import ConfigurationError
+from .reporter import Reporter
 
 
 class ConfigManager:
-    def __init__(self, config_path: str = None, verbose: bool = False, no_config: bool = False):
+    def __init__(
+        self,
+        reporter: Reporter,
+        config_path: str = None,
+        verbose: bool = False,
+        no_config: bool = False,
+    ):
+        self.reporter = reporter
         self.config_path = config_path
         self.verbose = verbose
         self.no_config = no_config
@@ -45,7 +51,7 @@ class ConfigManager:
         for path in filter(None, config_paths):
             if path.is_file():
                 if self.verbose:
-                    click.secho(f"Config found at: {path}", **CLICK_STYLE["success"])
+                    self.reporter.success(f"Config found at: {path}")
                 return path
         # If no config is found, return None
         return None
@@ -65,7 +71,7 @@ class ConfigManager:
             # If the config file ends with .yaml.j2, use Jinja2
             if config_file.suffix == ".j2":
                 if self.verbose:
-                    click.secho("Using Jinja2 template processing...", **CLICK_STYLE["info"])
+                    self.reporter.info("Using Jinja2 template processing...")
                 env = Environment(loader=FileSystemLoader(os.getcwd()))
                 template = env.from_string(content)
                 content = template.render()
@@ -73,7 +79,7 @@ class ConfigManager:
             # If the config file ends with .yaml.mako, use Mako
             elif config_file.suffix == ".mako":
                 if self.verbose:
-                    click.secho("Using Mako template processing...", **CLICK_STYLE["info"])
+                    self.reporter.info("Using Mako template processing...")
                 template = Template(content)
                 content = template.render()
 
@@ -81,10 +87,7 @@ class ConfigManager:
             config_data = yaml.safe_load(content)
 
             if self.verbose:
-                click.secho(
-                    f"Config loaded successfully from {config_file}",
-                    **CLICK_STYLE["success"],
-                )
+                self.reporter.success(f"Config loaded successfully from {config_file}")
             return config_data
         except yaml.YAMLError as e:
             raise ConfigurationError(f"Error parsing YAML file: {e}") from e
@@ -97,7 +100,7 @@ class ConfigManager:
         try:
             yaml.dump(self.config_data, sys.stdout, default_flow_style=False, sort_keys=False)
         except Exception as e:  # pylint: disable=broad-exception-caught
-            click.secho(f"Error dumping configuration: {e}", **CLICK_STYLE["error"])
+            self.reporter.error(f"Error dumping configuration: {e}")
 
     def validate_config(self):
         if not self.config_data:

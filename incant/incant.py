@@ -1,27 +1,26 @@
 import os
 import time
 import textwrap
-import click
 from incant.incus_cli import IncusCLI
 from .config_manager import ConfigManager
-
-# click output styles
-from .constants import CLICK_STYLE
 from .exceptions import IncantError, InstanceError
+from .reporter import Reporter
 
 
 class Incant:
-    def __init__(self, **kwargs):
+    def __init__(self, reporter: Reporter, **kwargs):
+        self.reporter = reporter
         self.verbose = kwargs.get("verbose", False)
         self.no_config = kwargs.get("no_config", False)
         self.config_manager = ConfigManager(
+            reporter=self.reporter,
             config_path=kwargs.get("config", None),
             verbose=self.verbose,
             no_config=self.no_config,
         )
         if not self.no_config:
             self.config_manager.validate_config()
-        self.incus = IncusCLI()
+        self.incus = IncusCLI(self.reporter)
 
     def _get_instances(self, name: str = None) -> dict:
         """Helper to get instances from config, either all or a specific one."""
@@ -50,9 +49,8 @@ class Incant:
             network = instance_data.get("network", None)
             instance_type = instance_data.get("type", None)
 
-            click.secho(
+            self.reporter.success(
                 f"Creating instance {instance_name} with image {image}...",
-                **CLICK_STYLE["success"],
             )
             self.incus.create_instance(
                 instance_name,
@@ -69,12 +67,13 @@ class Incant:
         for instance_name, instance_data in instances_to_process.items():
             # Wait for the agent to become ready before sharing the current directory
             while True:
-                if self.incus.is_agent_running(instance_name) and self.incus.is_agent_usable(instance_name):
+                if self.incus.is_agent_running(
+                    instance_name
+                ) and self.incus.is_agent_usable(instance_name):
                     break
                 time.sleep(0.3)
-            click.secho(
+            self.reporter.success(
                 f"Sharing current directory to {instance_name}:/incant ...",
-                **CLICK_STYLE["success"],
             )
 
             # Wait for the instance to become ready if specified in config, or
@@ -85,15 +84,13 @@ class Incant:
                 or instance_data.get("provision", False)
                 or instance_data.get("vm", False)
             ):
-                click.secho(
+                self.reporter.info(
                     f"Waiting for {instance_name} to become ready...",
-                    **CLICK_STYLE["info"],
                 )
                 while True:
                     if self.incus.is_instance_ready(instance_name, True):
-                        click.secho(
+                        self.reporter.success(
                             f"Instance {instance_name} is ready.",
-                            **CLICK_STYLE["success"],
                         )
                         break
                     time.sleep(1)
@@ -113,7 +110,7 @@ class Incant:
             provisions = instance_data.get("provision", [])
 
             if provisions:
-                click.secho(f"Provisioning instance {instance_name}...", **CLICK_STYLE["success"])
+                self.reporter.success(f"Provisioning instance {instance_name}...")
 
                 # Handle provisioning steps
                 if isinstance(provisions, str):
@@ -125,10 +122,10 @@ class Incant:
                         elif isinstance(step, dict) and "ssh" in step:
                             self.incus.ssh_setup(instance_name, step["ssh"])
                         else:
-                            click.secho("Running provisioning step ...", **CLICK_STYLE["info"])
+                            self.reporter.info("Running provisioning step ...")
                             self.incus.provision(instance_name, step)
             else:
-                click.secho(f"No provisioning found for {instance_name}.", **CLICK_STYLE["info"])
+                self.reporter.info(f"No provisioning found for {instance_name}.")
 
     def destroy(self, name=None):
         instances_to_destroy = self._get_instances(name)
@@ -136,20 +133,20 @@ class Incant:
         for instance_name, _instance_data in instances_to_destroy.items():
             # Check if the instance exists before deleting
             if not self.incus.is_instance(instance_name):
-                click.secho(f"Instance '{instance_name}' does not exist.", **CLICK_STYLE["info"])
+                self.reporter.info(f"Instance '{instance_name}' does not exist.")
                 continue
 
-            click.secho(f"Destroying instance {instance_name} ...", **CLICK_STYLE["success"])
+            self.reporter.success(f"Destroying instance {instance_name} ...")
             self.incus.destroy_instance(instance_name)
 
     def list_instances(self):
         """List all instances defined in the configuration."""
         for instance_name in self.config_manager.config_data["instances"]:
-            click.echo(f"{instance_name}")
+            self.reporter.echo(f"{instance_name}")
 
     def incant_init(self):
         example_config = textwrap.dedent(
-            """\
+            """
             instances:
               container-client:
                 image: images:ubuntu/24.04

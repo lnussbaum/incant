@@ -7,11 +7,9 @@ import os
 import time
 from pathlib import Path
 import glob
-import click
 
-# click output styles
-from .constants import CLICK_STYLE
 from .exceptions import IncusCommandError, InstanceError
+from .reporter import Reporter
 
 
 class IncusCLI:
@@ -19,7 +17,8 @@ class IncusCLI:
     A Python wrapper for the Incus CLI interface.
     """
 
-    def __init__(self, incus_cmd: str = "incus"):
+    def __init__(self, reporter: Reporter, incus_cmd: str = "incus"):
+        self.reporter = reporter
         self.incus_cmd = incus_cmd
 
     def _run_command(  # pylint: disable=too-many-arguments
@@ -34,7 +33,7 @@ class IncusCLI:
         try:
             full_command = [self.incus_cmd] + command
             if not quiet:
-                click.secho(f"-> {' '.join(full_command)}", **CLICK_STYLE["info"])
+                self.reporter.info(f"-> {' '.join(full_command)}")
             result = subprocess.run(
                 full_command, capture_output=capture_output, text=True, check=True
             )
@@ -46,7 +45,7 @@ class IncusCLI:
                 else f"Command {' '.join(full_command)} failed"
             )
             if allow_failure:
-                click.secho(error_message, **CLICK_STYLE["error"])
+                self.reporter.error(error_message)
                 return e.stdout
             raise IncusCommandError(error_message, command=" ".join(full_command)) from e
 
@@ -119,9 +118,8 @@ class IncusCLI:
         try:
             self._run_command(command, capture_output=False)
         except IncusCommandError:
-            click.secho(
+            self.reporter.warning(
                 "Shared folder creation failed. Retrying without shift=true...",
-                **CLICK_STYLE["warning"],
             )
             command.remove("shift=true")  # Remove shift option and retry
             self._run_command(command, capture_output=False)
@@ -144,9 +142,8 @@ class IncusCLI:
                         time.sleep(1)
                     # On last attempt, fall through to re-create device
 
-            click.secho(
+            self.reporter.warning(
                 "Shared folder creation failed (/incant not mounted). Retrying...",
-                **CLICK_STYLE["warning"],
             )
             self._run_command(
                 ["config", "device", "remove", name, f"{name}_shared_incant"],
@@ -209,11 +206,11 @@ class IncusCLI:
         if not self.is_agent_running(name):
             return False
         if verbose:
-            click.secho("Agent is running, testing if usable...", **CLICK_STYLE["info"])
+            self.reporter.info("Agent is running, testing if usable...")
         if not self.is_agent_usable(name):
             return False
         if verbose:
-            click.secho("Agent is usable, checking if system booted...", **CLICK_STYLE["info"])
+            self.reporter.info("Agent is usable, checking if system booted...")
         if not self.is_instance_booted(name):
             return False
         return True
@@ -228,8 +225,8 @@ class IncusCLI:
 
     def clean_known_hosts(self, name: str) -> None:
         """Remove an instance's name from the known_hosts file and add the new host key."""
-        click.secho(
-            f"Updating {name} in known_hosts to avoid SSH warnings...", **CLICK_STYLE["success"]
+        self.reporter.success(
+            f"Updating {name} in known_hosts to avoid SSH warnings...",
         )
         known_hosts_path = Path.home() / ".ssh" / "known_hosts"
         if known_hosts_path.exists():
@@ -257,9 +254,8 @@ class IncusCLI:
                 capture_output=True,
             )
         except FileNotFoundError:
-            click.secho(
+            self.reporter.warning(
                 "ssh command not found, cannot add new host key to known_hosts.",
-                **CLICK_STYLE["warning"],
             )
 
     def provision(self, name: str, provision: str, quiet: bool = True) -> None:
@@ -315,7 +311,7 @@ class IncusCLI:
         compression: str = "none",
     ) -> None:
         """Copies a file or directory to an Incus instance."""
-        click.secho(f"Copying {source} to {instance_name}:{target}...", **CLICK_STYLE["success"])
+        self.reporter.success(f"Copying {source} to {instance_name}:{target}...")
         command = ["file", "push"]
         if uid is not None:
             command.extend(["--uid", str(uid)])
@@ -337,7 +333,7 @@ class IncusCLI:
         if isinstance(ssh_config, bool):
             ssh_config = {"clean_known_hosts": True}
 
-        click.secho(f"Installing SSH server in {name}...", **CLICK_STYLE["success"])
+        self.reporter.success(f"Installing SSH server in {name}...")
         try:
             self.exec(
                 name,
@@ -345,14 +341,13 @@ class IncusCLI:
                 capture_output=False,
             )
         except IncusCommandError:
-            click.secho(
+            self.reporter.error(
                 f"Failed to install SSH server in {name}. "
                 "Currently, only apt-based systems are supported for ssh-setup.",
-                **CLICK_STYLE["error"],
             )
             return
 
-        click.secho(f"Filling authorized_keys in {name}...", **CLICK_STYLE["success"])
+        self.reporter.success(f"Filling authorized_keys in {name}...")
         self.exec(name, ["mkdir", "-p", "/root/.ssh"])
 
         # Determine the content for authorized_keys
@@ -367,9 +362,8 @@ class IncusCLI:
                 with open(source_path, "r", encoding="utf-8") as f:
                     authorized_keys_content = f.read()
             else:
-                click.secho(
+                self.reporter.warning(
                     f"Provided authorized_keys file not found: {source_path}. Skipping copy.",
-                    **CLICK_STYLE["warning"],
                 )
         else:
             # Concatenate all public keys from ~/.ssh/id_*.pub
@@ -384,10 +378,9 @@ class IncusCLI:
             if pub_keys_content:
                 authorized_keys_content = "\n".join(pub_keys_content) + "\n"
             else:
-                click.secho(
+                self.reporter.warning(
                     "No public keys found in ~/.ssh/id_*.pub and no authorized_keys file provided. "
                     "SSH access might not be possible without a password.",
-                    **CLICK_STYLE["warning"],
                 )
 
         if authorized_keys_content:
@@ -417,7 +410,7 @@ class IncusCLI:
 
     def shell(self, name: str) -> None:
         """Opens an interactive shell in the specified Incus instance."""
-        click.secho(f"Opening shell in {name}...", **CLICK_STYLE["success"])
+        self.reporter.success(f"Opening shell in {name}...")
         try:
             subprocess.run(
                 [self.incus_cmd, "shell", name],
