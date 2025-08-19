@@ -27,28 +27,19 @@ class ConfigManager:
             self.config_data = self.load_config()
 
     def find_config_file(self):
-        config_paths = [
-            (
-                Path(self.config_path) if self.config_path else None
-            ),  # First, check if a config is passed directly
-            *(
-                Path(os.getcwd()) / f"incant{ext}"
-                for ext in [
-                    ".yaml",
-                    ".yaml.j2",
-                    ".yaml.mako",
-                ]
-            ),
-            *(
-                Path(os.getcwd()) / f".incant{ext}"
-                for ext in [
-                    ".yaml",
-                    ".yaml.j2",
-                    ".yaml.mako",
-                ]
-            ),
-        ]
-        for path in filter(None, config_paths):
+        search_paths = []
+        if self.config_path:
+            search_paths.append(Path(self.config_path))
+
+        base_names = ["incant", ".incant"]
+        extensions = [".yaml", ".yaml.j2", ".yaml.mako"]
+        cwd = Path(os.getcwd())
+
+        for name in base_names:
+            for ext in extensions:
+                search_paths.append(cwd / f"{name}{ext}")
+
+        for path in search_paths:
             if path.is_file():
                 if self.verbose:
                     self.reporter.success(f"Config found at: {path}")
