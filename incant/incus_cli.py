@@ -280,8 +280,7 @@ class IncusCLI:
         gid: Optional[int] = None,
         mode: Optional[str] = None,
         recursive: bool = False,
-        create_empty_directories: bool = False,
-        compression: str = "none",
+        create_dirs: bool = False,
         quiet: bool = False,
     ) -> None:
         """Copies a file or directory to an Incus instance."""
@@ -296,10 +295,8 @@ class IncusCLI:
             command.extend(["--mode", mode])
         if recursive:
             command.append("--recursive")
-        if create_empty_directories:
-            command.append("--create-empty-directories")
-        if compression != "none":
-            command.extend(["--compression", compression])
+        if create_dirs:
+            command.append("--create-dirs")
         command.extend([source, f"{instance_name}{target}"])
         self._run_command(command, capture_output=False, quiet=quiet)
 

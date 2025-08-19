@@ -186,20 +186,13 @@ class ConfigManager:
                         "must be a boolean."
                     )
                 )
-            if "create_empty_directories" in value and not isinstance(
-                value["create_empty_directories"], bool
+            if "create_dirs" in value and not isinstance(
+                value["create_dirs"], bool
             ):
                 raise ConfigurationError(
                     (
                         f"Provisioning 'copy' step in instance '{name}' has invalid "
-                        "'create_empty_directories': must be a boolean."
-                    )
-                )
-            if "compression" in value and not isinstance(value["compression"], str):
-                raise ConfigurationError(
-                    (
-                        f"Provisioning 'copy' step in instance '{name}' has invalid 'compression': "
-                        "must be a string."
+                        "'create_dirs': must be a boolean."
                     )
                 )
 

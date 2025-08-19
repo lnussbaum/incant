@@ -339,8 +339,7 @@ def test_validate_provision_copy_new_options_valid(tmp_path, mock_reporter):
                         "copy": {
                             "source": "a",
                             "target": "/b",
-                            "create_empty_directories": True,
-                            "compression": "gzip",
+                            "create_dirs": True,
                         }
                     }
                 ],
@@ -355,8 +354,7 @@ def test_validate_provision_copy_new_options_valid(tmp_path, mock_reporter):
 
 def test_validate_provision_copy_new_options_invalid(tmp_path, mock_reporter):
     bad_cases = [
-        ({"create_empty_directories": "yes"}, "create_empty_directories"),
-        ({"compression": 1}, "compression"),
+        ({"create_dirs": "yes"}, "create_dirs"),
     ]
     for extra, field in bad_cases:
         config = {
