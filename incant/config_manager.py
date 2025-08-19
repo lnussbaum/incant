@@ -186,9 +186,7 @@ class ConfigManager:
                         "must be a boolean."
                     )
                 )
-            if "create_dirs" in value and not isinstance(
-                value["create_dirs"], bool
-            ):
+            if "create_dirs" in value and not isinstance(value["create_dirs"], bool):
                 raise ConfigurationError(
                     (
                         f"Provisioning 'copy' step in instance '{name}' has invalid "
