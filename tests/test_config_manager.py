@@ -173,3 +173,107 @@ def test_dump_config_no_config(mock_reporter):
     cm = ConfigManager(mock_reporter, no_config=True)
     with pytest.raises(ConfigurationError, match="No configuration to dump"):
         cm.dump_config()
+
+
+def test_validate_provision_valid_string(tmp_path, mock_reporter):
+    """Test that a valid provision string passes validation."""
+    config = {
+        "instances": {
+            "test-instance": {
+                "image": "ubuntu/22.04",
+                "provision": "path/to/script.sh",
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_reporter, config_path=str(config_file))
+    cm.validate_config()
+
+
+def test_validate_provision_valid_list(tmp_path, mock_reporter):
+    """Test that a valid provision list passes validation."""
+    config = {
+        "instances": {
+            "test-instance": {
+                "image": "ubuntu/22.04",
+                "provision": [
+                    "path/to/script.sh",
+                    {"copy": {"src": "a", "dest": "b"}},
+                    {"ssh": True},
+                ],
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_reporter, config_path=str(config_file))
+    cm.validate_config()
+
+
+def test_validate_provision_invalid_type(tmp_path, mock_reporter):
+    """Test that a provision field with an invalid type fails validation."""
+    config = {"instances": {"test-instance": {"image": "ubuntu/22.04", "provision": 123}}}
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_reporter, config_path=str(config_file))
+    with pytest.raises(ConfigurationError, match="must be a string or a list of steps"):
+        cm.validate_config()
+
+
+def test_validate_provision_invalid_step_multiple_keys(tmp_path, mock_reporter):
+    """Test that a provision step with multiple keys fails validation."""
+    config = {
+        "instances": {
+            "test-instance": {
+                "image": "ubuntu/22.04",
+                "provision": [{"copy": {"src": "a", "dest": "b"}, "ssh": True}],
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_reporter, config_path=str(config_file))
+    with pytest.raises(ConfigurationError, match="must have exactly one key"):
+        cm.validate_config()
+
+
+def test_validate_provision_invalid_step_unknown_type(tmp_path, mock_reporter):
+    """Test that a provision step with an unknown type fails validation."""
+    config = {
+        "instances": {
+            "test-instance": {
+                "image": "ubuntu/22.04",
+                "provision": [{"unknown": "step"}],
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_reporter, config_path=str(config_file))
+    with pytest.raises(ConfigurationError, match="Unknown provisioning step type"):
+        cm.validate_config()
+
+
+def test_validate_provision_invalid_copy_value(tmp_path, mock_reporter):
+    """Test that a 'copy' provision step with a non-dictionary value fails."""
+    config = {
+        "instances": {"test-instance": {"image": "ubuntu/22.04", "provision": [{"copy": "value"}]}}
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_reporter, config_path=str(config_file))
+    with pytest.raises(ConfigurationError, match="must have a dictionary value"):
+        cm.validate_config()
+
+
+def test_validate_provision_invalid_ssh_value(tmp_path, mock_reporter):
+    """Test that an 'ssh' provision step with an invalid value fails."""
+    config = {
+        "instances": {"test-instance": {"image": "ubuntu/22.04", "provision": [{"ssh": "string"}]}}
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_reporter, config_path=str(config_file))
+    with pytest.raises(ConfigurationError, match="must have a boolean or dictionary value"):
+        cm.validate_config()

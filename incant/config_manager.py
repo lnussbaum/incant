@@ -100,6 +100,53 @@ class ConfigManager:
         except Exception as e:  # pylint: disable=broad-exception-caught
             raise ConfigurationError(f"Error dumping configuration: {e}") from e
 
+    def _validate_provision_step(self, step, step_idx, name):
+        if isinstance(step, str):
+            return
+
+        if not isinstance(step, dict):
+            raise ConfigurationError(
+                f"Provisioning step {step_idx} in instance '{name}' "
+                "must be a string or a dictionary."
+            )
+
+        if len(step) != 1:
+            raise ConfigurationError(
+                f"Provisioning step {step_idx} in instance '{name}' "
+                "must have exactly one key (e.g., 'copy' or 'ssh')."
+            )
+
+        key, value = list(step.items())[0]
+
+        if key not in ["copy", "ssh"]:
+            raise ConfigurationError(
+                f"Unknown provisioning step type '{key}' in instance '{name}'. "
+                "Accepted types are 'copy' or 'ssh'."
+            )
+
+        if key == "copy" and not isinstance(value, dict):
+            raise ConfigurationError(
+                f"Provisioning 'copy' step in instance '{name}' "
+                "must have a dictionary value."
+            )
+
+        if key == "ssh" and not isinstance(value, (bool, dict)):
+            raise ConfigurationError(
+                f"Provisioning 'ssh' step in instance '{name}' "
+                "must have a boolean or dictionary value."
+            )
+
+    def _validate_provisioning(self, instance, name):
+        if "provision" in instance and instance["provision"] is not None:
+            provisions = instance["provision"]
+            if isinstance(provisions, list):
+                for step_idx, step in enumerate(provisions):
+                    self._validate_provision_step(step, step_idx, name)
+            elif not isinstance(provisions, str):
+                raise ConfigurationError(
+                    f"Provisioning for instance '{name}' must be a string or a list of steps."
+                )
+
     def validate_config(self):
         if not self.config_data:
             raise ConfigurationError("No configuration loaded.")
@@ -127,3 +174,6 @@ class ConfigManager:
             for field in instance:
                 if field not in accepted_fields:
                     raise ConfigurationError(f"Unknown field '{field}' in instance '{name}'.")
+
+            # Validate 'provision' field
+            self._validate_provisioning(instance, name)
