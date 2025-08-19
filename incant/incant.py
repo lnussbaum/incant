@@ -21,6 +21,7 @@ class Incant:
         )
         if not self.no_config:
             self.config_manager.validate_config()
+        self.incus = IncusCLI()
 
     def _get_instances(self, name: str = None) -> dict:
         """Helper to get instances from config, either all or a specific one."""
@@ -36,7 +37,6 @@ class Incant:
 
     def up(self, name=None):
         instances_to_process = self._get_instances(name)
-        incus = IncusCLI()
 
         # Step 1 -- Create instances (we do this for all instances so that they can boot in parallel)
         for instance_name, instance_data in instances_to_process.items():
@@ -54,7 +54,7 @@ class Incant:
                 f"Creating instance {instance_name} with image {image}...",
                 **CLICK_STYLE["success"],
             )
-            incus.create_instance(
+            self.incus.create_instance(
                 instance_name,
                 image,
                 profiles=profiles,
@@ -69,7 +69,7 @@ class Incant:
         for instance_name, instance_data in instances_to_process.items():
             # Wait for the agent to become ready before sharing the current directory
             while True:
-                if incus.is_agent_running(instance_name) and incus.is_agent_usable(instance_name):
+                if self.incus.is_agent_running(instance_name) and self.incus.is_agent_usable(instance_name):
                     break
                 time.sleep(0.3)
             click.secho(
@@ -90,7 +90,7 @@ class Incant:
                     **CLICK_STYLE["info"],
                 )
                 while True:
-                    if incus.is_instance_ready(instance_name, True):
+                    if self.incus.is_instance_ready(instance_name, True):
                         click.secho(
                             f"Instance {instance_name} is ready.",
                             **CLICK_STYLE["success"],
@@ -99,7 +99,7 @@ class Incant:
                     time.sleep(1)
 
             if instance_data.get("shared_folder", True):
-                incus.create_shared_folder(instance_name)
+                self.incus.create_shared_folder(instance_name)
 
             if instance_data.get("provision", False):
                 # Automatically run provisioning after instance creation
@@ -107,7 +107,6 @@ class Incant:
 
     def provision(self, name: str = None):
         instances_to_provision = self._get_instances(name)
-        incus = IncusCLI()
 
         for instance_name, instance_data in instances_to_provision.items():
 
@@ -118,31 +117,30 @@ class Incant:
 
                 # Handle provisioning steps
                 if isinstance(provisions, str):
-                    incus.provision(instance_name, provisions)
+                    self.incus.provision(instance_name, provisions)
                 elif isinstance(provisions, list):
                     for step in provisions:
                         if isinstance(step, dict) and "copy" in step:
-                            incus.copy(instance_name, **step["copy"])
+                            self.incus.copy(instance_name, **step["copy"])
                         elif isinstance(step, dict) and "ssh" in step:
-                            incus.ssh_setup(instance_name, step["ssh"])
+                            self.incus.ssh_setup(instance_name, step["ssh"])
                         else:
                             click.secho("Running provisioning step ...", **CLICK_STYLE["info"])
-                            incus.provision(instance_name, step)
+                            self.incus.provision(instance_name, step)
             else:
                 click.secho(f"No provisioning found for {instance_name}.", **CLICK_STYLE["info"])
 
     def destroy(self, name=None):
         instances_to_destroy = self._get_instances(name)
-        incus = IncusCLI()
 
         for instance_name, _instance_data in instances_to_destroy.items():
             # Check if the instance exists before deleting
-            if not incus.is_instance(instance_name):
+            if not self.incus.is_instance(instance_name):
                 click.secho(f"Instance '{instance_name}' does not exist.", **CLICK_STYLE["info"])
                 continue
 
             click.secho(f"Destroying instance {instance_name} ...", **CLICK_STYLE["success"])
-            incus.destroy_instance(instance_name)
+            self.incus.destroy_instance(instance_name)
 
     def list_instances(self):
         """List all instances defined in the configuration."""
@@ -196,8 +194,6 @@ class Incant:
         print(f"Example configuration written to {config_path}")
 
     def shell(self, name: str = None):
-        incus = IncusCLI()
-
         instance_name = name
         if not instance_name:
             instance_names = list(self.config_manager.config_data["instances"].keys())
@@ -209,4 +205,4 @@ class Incant:
         if instance_name not in self.config_manager.config_data["instances"]:
             raise InstanceError(f"Instance '{instance_name}' not found in config")
 
-        incus.shell(instance_name)
+        self.incus.shell(instance_name)
