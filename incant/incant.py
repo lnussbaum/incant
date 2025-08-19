@@ -13,16 +13,17 @@ from .exceptions import IncantError, InstanceError
 class Incant:
     def __init__(self, **kwargs):
         self.verbose = kwargs.get("verbose", False)
+        self.no_config = kwargs.get("no_config", False)
         self.config_manager = ConfigManager(
             config_path=kwargs.get("config", None),
             verbose=self.verbose,
-            no_config=kwargs.get("no_config", False)
+            no_config=self.no_config,
         )
-        self.config_manager.config_data = self.config_manager.config_data
+        if not self.no_config:
+            self.config_manager.validate_config()
 
     def _get_instances(self, name: str = None) -> dict:
         """Helper to get instances from config, either all or a specific one."""
-        self.config_manager.check_config()
         instances = self.config_manager.config_data["instances"]
         if name:
             if name not in instances:
@@ -40,10 +41,7 @@ class Incant:
         # Step 1 -- Create instances (we do this for all instances so that they can boot in parallel)
         for instance_name, instance_data in instances_to_process.items():
             # Process the instance
-            image = instance_data.get("image")
-            if not image:
-                click.secho(f"Skipping {instance_name}: No image defined.", **CLICK_STYLE["error"])
-                continue
+            image = instance_data["image"]
 
             vm = instance_data.get("vm", False)
             profiles = instance_data.get("profiles", None)
@@ -148,8 +146,6 @@ class Incant:
 
     def list_instances(self):
         """List all instances defined in the configuration."""
-        self.config_manager.check_config()
-
         for instance_name in self.config_manager.config_data["instances"]:
             click.echo(f"{instance_name}")
 
@@ -200,8 +196,6 @@ class Incant:
         print(f"Example configuration written to {config_path}")
 
     def shell(self, name: str = None):
-        self.config_manager.check_config()
-
         incus = IncusCLI()
 
         instance_name = name

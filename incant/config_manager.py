@@ -99,8 +99,30 @@ class ConfigManager:
         except Exception as e:  # pylint: disable=broad-exception-caught
             click.secho(f"Error dumping configuration: {e}", **CLICK_STYLE["error"])
 
-    def check_config(self):
+    def validate_config(self):
         if not self.config_data:
             raise ConfigurationError("No configuration loaded.")
         if "instances" not in self.config_data:
             raise ConfigurationError("No instances found in config")
+
+        accepted_fields = {
+            "image",
+            "vm",
+            "profiles",
+            "config",
+            "devices",
+            "network",
+            "type",
+            "wait",
+            "provision",
+            "shared_folder",
+        }
+
+        # The top-level keys of the instances dictionary are the names
+        for name, instance in self.config_data["instances"].items():
+            if "image" not in instance:
+                raise ConfigurationError(f"Instance '{name}' is missing required 'image' field.")
+
+            for field in instance:
+                if field not in accepted_fields:
+                    raise ConfigurationError(f"Unknown field '{field}' in instance '{name}'.")
