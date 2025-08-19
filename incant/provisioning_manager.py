@@ -9,9 +9,10 @@ import tempfile
 from pathlib import Path
 from typing import Union
 
+from .exceptions import IncusCommandError
 from .incus_cli import IncusCLI
 from .reporter import Reporter
-from .exceptions import IncusCommandError
+from .types import ProvisionSteps
 
 
 class ProvisionManager:
@@ -21,7 +22,7 @@ class ProvisionManager:
         self.incus = incus_cli
         self.reporter = reporter
 
-    def provision(self, instance_name: str, provisions: list | str):
+    def provision(self, instance_name: str, provisions: ProvisionSteps):
         """Provision an instance."""
         if provisions:
             self.reporter.success(f"Provisioning instance {instance_name}...")

@@ -6,6 +6,7 @@ from .provisioning_manager import ProvisionManager
 from .config_manager import ConfigManager
 from .exceptions import IncantError, InstanceError
 from .reporter import Reporter
+from .types import InstanceDict, ProvisionSteps  # pylint: disable=unused-import # noqa: F401
 
 
 class Incant:
@@ -24,7 +25,7 @@ class Incant:
         self.incus = IncusCLI(self.reporter)
         self.provisioner = ProvisionManager(self.incus, self.reporter)
 
-    def _get_instances(self, name: str = None) -> dict:
+    def _get_instances(self, name: str = None) -> InstanceDict:
         """Helper to get instances from config, either all or a specific one."""
         instances = self.config_manager.config_data["instances"]
         if name:
