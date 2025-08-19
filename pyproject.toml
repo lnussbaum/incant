@@ -20,6 +20,7 @@ incant = "incant.cli:cli"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^3.3.4"
+pytest-cov = "^6.2.1"
 
 [tool.black]
 line-length = 100
