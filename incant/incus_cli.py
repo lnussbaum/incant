@@ -281,7 +281,7 @@ class IncusCLI:
                     temp_file.write(provision)
 
                 # Copy the file to the instance
-                self._run_command(["file", "push", temp_path, f"{name}{temp_path}"], quiet=quiet)
+                self.file_push(name, temp_path, temp_path)
 
                 # Execute the script after copying
                 self.exec(
@@ -298,7 +298,7 @@ class IncusCLI:
                 # Clean up the local temporary file
                 os.remove(temp_path)
 
-    def copy(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    def file_push(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         instance_name: str,
         source: str,
@@ -389,18 +389,12 @@ class IncusCLI:
                 with os.fdopen(fd, "w") as temp_file:
                     temp_file.write(authorized_keys_content)
 
-                self._run_command(
-                    [
-                        "file",
-                        "push",
-                        temp_path,
-                        f"{name}/root/.ssh/authorized_keys",
-                        "--uid",
-                        "0",
-                        "--gid",
-                        "0",
-                    ],
-                    capture_output=False,
+                self.file_push(
+                    name,
+                    temp_path,
+                    "/root/.ssh/authorized_keys",
+                    uid=0,
+                    gid=0,
                 )
             finally:
                 os.remove(temp_path)

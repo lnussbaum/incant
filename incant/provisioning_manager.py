@@ -24,7 +24,7 @@ class ProvisionManager:
             elif isinstance(provisions, list):
                 for step in provisions:
                     if isinstance(step, dict) and "copy" in step:
-                        self.incus.copy(instance_name, **step["copy"])
+                        self.incus.file_push(instance_name, **step["copy"])
                     elif isinstance(step, dict) and "ssh" in step:
                         self.incus.ssh_setup(instance_name, step["ssh"])
                     else:
