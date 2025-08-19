@@ -43,13 +43,17 @@ class IncusCLI:
         except subprocess.CalledProcessError as e:
             error_message = (
                 f"Failed: {e.stderr.strip()}"
-                if capture_output
+                if capture_output and e.stderr is not None
                 else f"Command {' '.join(full_command)} failed"
             )
             if allow_failure:
                 self.reporter.error(error_message)
                 return e.stdout
-            raise IncusCommandError(error_message, command=" ".join(full_command)) from e
+            raise IncusCommandError(
+                error_message,
+                command=" ".join(full_command),
+                stderr=e.stderr,
+            ) from e
 
     def exec(self, name: str, command: List[str], cwd: str = None, **kwargs) -> str:
         cmd = ["exec"]
