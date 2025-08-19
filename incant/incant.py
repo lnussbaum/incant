@@ -20,25 +20,25 @@ class Incant:
         )
         self.config_manager.config_data = self.config_manager.config_data
 
+    def _get_instances(self, name: str = None) -> dict:
+        """Helper to get instances from config, either all or a specific one."""
+        self.config_manager.check_config()
+        instances = self.config_manager.config_data["instances"]
+        if name:
+            if name not in instances:
+                raise InstanceError(f"Instance '{name}' not found in config.")
+            return {name: instances[name]}
+        return instances
+
     def dump_config(self):
         self.config_manager.dump_config()
 
     def up(self, name=None):
-        self.config_manager.check_config()
-
+        instances_to_process = self._get_instances(name)
         incus = IncusCLI()
 
-        # If a name is provided, check if the instance exists in the config
-        if name and name not in self.config_manager.config_data["instances"]:
-            raise InstanceError(f"Instance '{name}' not found in config.")
-
         # Step 1 -- Create instances (we do this for all instances so that they can boot in parallel)
-        # Loop through all instances, but skip those that don't match the provided name (if any)
-        for instance_name, instance_data in self.config_manager.config_data["instances"].items():
-            # If a name is provided, only process the matching instance
-            if name and instance_name != name:
-                continue
-
+        for instance_name, instance_data in instances_to_process.items():
             # Process the instance
             image = instance_data.get("image")
             if not image:
@@ -68,12 +68,7 @@ class Incant:
             )
 
         # Step 2 -- Create shared folder and provision
-        # Loop through all instances, but skip those that don't match the provided name (if any)
-        for instance_name, instance_data in self.config_manager.config_data["instances"].items():
-            # If a name is provided, only process the matching instance
-            if name and instance_name != name:
-                continue
-
+        for instance_name, instance_data in instances_to_process.items():
             # Wait for the agent to become ready before sharing the current directory
             while True:
                 if incus.is_agent_running(instance_name) and incus.is_agent_usable(instance_name):
@@ -113,18 +108,8 @@ class Incant:
                 self.provision(instance_name)
 
     def provision(self, name: str = None):
-        self.config_manager.check_config()
-
+        instances_to_provision = self._get_instances(name)
         incus = IncusCLI()
-
-        if name:
-            # If a specific instance name is provided, check if it exists
-            if name not in self.config_manager.config_data["instances"]:
-                raise InstanceError(f"Instance '{name}' not found in config.")
-            instances_to_provision = {name: self.config_manager.config_data["instances"][name]}
-        else:
-            # If no name is provided, provision all instances
-            instances_to_provision = self.config_manager.config_data["instances"]
 
         for instance_name, instance_data in instances_to_provision.items():
 
@@ -149,19 +134,10 @@ class Incant:
                 click.secho(f"No provisioning found for {instance_name}.", **CLICK_STYLE["info"])
 
     def destroy(self, name=None):
-        self.config_manager.check_config()
-
+        instances_to_destroy = self._get_instances(name)
         incus = IncusCLI()
 
-        # If a name is provided, check if the instance exists in the config
-        if name and name not in self.config_manager.config_data["instances"]:
-            raise InstanceError(f"Instance '{name}' not found in config.")
-
-        for instance_name, _instance_data in self.config_manager.config_data["instances"].items():
-            # If a name is provided, only process the matching instance
-            if name and instance_name != name:
-                continue
-
+        for instance_name, _instance_data in instances_to_destroy.items():
             # Check if the instance exists before deleting
             if not incus.is_instance(instance_name):
                 click.secho(f"Instance '{instance_name}' does not exist.", **CLICK_STYLE["info"])
