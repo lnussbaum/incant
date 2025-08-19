@@ -2,6 +2,7 @@ import os
 import time
 import textwrap
 from incant.incus_cli import IncusCLI
+from .provisioning_manager import ProvisionManager
 from .config_manager import ConfigManager
 from .exceptions import IncantError, InstanceError
 from .reporter import Reporter
@@ -21,6 +22,7 @@ class Incant:
         if not self.no_config:
             self.config_manager.validate_config()
         self.incus = IncusCLI(self.reporter)
+        self.provisioner = ProvisionManager(self.incus, self.reporter)
 
     def _get_instances(self, name: str = None) -> dict:
         """Helper to get instances from config, either all or a specific one."""
@@ -106,26 +108,8 @@ class Incant:
         instances_to_provision = self._get_instances(name)
 
         for instance_name, instance_data in instances_to_provision.items():
-
             provisions = instance_data.get("provision", [])
-
-            if provisions:
-                self.reporter.success(f"Provisioning instance {instance_name}...")
-
-                # Handle provisioning steps
-                if isinstance(provisions, str):
-                    self.incus.provision(instance_name, provisions)
-                elif isinstance(provisions, list):
-                    for step in provisions:
-                        if isinstance(step, dict) and "copy" in step:
-                            self.incus.copy(instance_name, **step["copy"])
-                        elif isinstance(step, dict) and "ssh" in step:
-                            self.incus.ssh_setup(instance_name, step["ssh"])
-                        else:
-                            self.reporter.info("Running provisioning step ...")
-                            self.incus.provision(instance_name, step)
-            else:
-                self.reporter.info(f"No provisioning found for {instance_name}.")
+            self.provisioner.provision(instance_name, provisions)
 
     def destroy(self, name=None):
         instances_to_destroy = self._get_instances(name)
