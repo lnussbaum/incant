@@ -20,7 +20,7 @@ class ProvisionManager:
 
             # Handle provisioning steps
             if isinstance(provisions, str):
-                self.incus.provision(instance_name, provisions)
+                self.incus.run_script(instance_name, provisions)
             elif isinstance(provisions, list):
                 for step in provisions:
                     if isinstance(step, dict) and "copy" in step:
@@ -29,6 +29,6 @@ class ProvisionManager:
                         self.incus.ssh_setup(instance_name, step["ssh"])
                     else:
                         self.reporter.info("Running provisioning step ...")
-                        self.incus.provision(instance_name, step)
+                        self.incus.run_script(instance_name, step)
         else:
             self.reporter.info(f"No provisioning found for {instance_name}.")

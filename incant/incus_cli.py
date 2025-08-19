@@ -258,15 +258,15 @@ class IncusCLI:
                 "ssh command not found, cannot add new host key to known_hosts.",
             )
 
-    def provision(self, name: str, provision: str, quiet: bool = True) -> None:
-        """Provision an instance with a single command or a multi-line script."""
+    def run_script(self, name: str, script: str, quiet: bool = True) -> None:
+        """Run a script in an instance."""
 
-        if "\n" not in provision:  # Single-line command
+        if "\n" not in script:  # Single-line command
             # Change to /incant and then execute the provision command inside
             # sh -c for quoting safety
             self.exec(
                 name,
-                ["sh", "-c", provision],
+                ["sh", "-c", script],
                 quiet=quiet,
                 capture_output=False,
                 cwd="/incant",
@@ -278,10 +278,10 @@ class IncusCLI:
             try:
                 # Write the script content to the temporary file
                 with os.fdopen(fd, "w") as temp_file:
-                    temp_file.write(provision)
+                    temp_file.write(script)
 
                 # Copy the file to the instance
-                self.file_push(name, temp_path, temp_path)
+                self.file_push(name, temp_path, temp_path, quiet=True)
 
                 # Execute the script after copying
                 self.exec(
@@ -309,9 +309,11 @@ class IncusCLI:
         recursive: bool = False,
         create_empty_directories: bool = False,
         compression: str = "none",
+        quiet: bool = False,
     ) -> None:
         """Copies a file or directory to an Incus instance."""
-        self.reporter.success(f"Copying {source} to {instance_name}:{target}...")
+        if not quiet:
+            self.reporter.success(f"Copying {source} to {instance_name}:{target}...")
         command = ["file", "push"]
         if uid is not None:
             command.extend(["--uid", str(uid)])
@@ -326,7 +328,7 @@ class IncusCLI:
         if compression != "none":
             command.extend(["--compression", compression])
         command.extend([source, f"{instance_name}{target}"])
-        self._run_command(command, capture_output=False)
+        self._run_command(command, capture_output=False, quiet=quiet)
 
     def ssh_setup(self, name: str, ssh_config: Union[dict, bool]) -> None:
         """Install SSH server and copy authorized_keys."""
