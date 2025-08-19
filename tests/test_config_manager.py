@@ -199,7 +199,7 @@ def test_validate_provision_valid_list(tmp_path, mock_reporter):
                 "image": "ubuntu/22.04",
                 "provision": [
                     "path/to/script.sh",
-                    {"copy": {"src": "a", "dest": "b"}},
+                    {"copy": {"source": "a", "target": "b"}},
                     {"ssh": True},
                 ],
             }

@@ -130,6 +130,18 @@ class ConfigManager:
                 "must have a dictionary value."
             )
 
+        if key == "copy" and isinstance(value, dict):
+            required_fields = ["source", "target"]
+            missing = [field for field in required_fields if field not in value]
+            if missing:
+                raise ConfigurationError(
+                    f"Provisioning 'copy' step in instance '{name}' is missing required field(s): {', '.join(missing)}."
+                )
+            if not isinstance(value["source"], str) or not isinstance(value["target"], str):
+                raise ConfigurationError(
+                    f"Provisioning 'copy' step in instance '{name}' must have string 'source' and 'target'."
+                )
+
         if key == "ssh" and not isinstance(value, (bool, dict)):
             raise ConfigurationError(
                 f"Provisioning 'ssh' step in instance '{name}' "
