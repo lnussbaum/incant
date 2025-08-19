@@ -100,7 +100,7 @@ class ConfigManager:
         try:
             yaml.dump(self.config_data, sys.stdout, default_flow_style=False, sort_keys=False)
         except Exception as e:  # pylint: disable=broad-exception-caught
-            self.reporter.error(f"Error dumping configuration: {e}")
+            raise ConfigurationError(f"Error dumping configuration: {e}") from e
 
     def validate_config(self):
         if not self.config_data:
