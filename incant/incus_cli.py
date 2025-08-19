@@ -222,7 +222,7 @@ class IncusCLI:
         try:
             self.get_instance_info(name)
             return True
-        except subprocess.CalledProcessError:
+        except IncusCommandError:
             return False
 
     def run_script(self, name: str, script: str, quiet: bool = True) -> None:
