@@ -10,11 +10,15 @@ _incant_completions() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     
     # Commands like up, provision, destroy, list, dump
-    opts="up provision destroy shell list dump init"
+    opts="up provision destroy shell list dump init -f --config"
 
 
     # Handle auto-completion based on the previous command word
     case "${prev}" in
+        -f|--config)
+            COMPREPLY=( $(compgen -d -- "${cur}") $(compgen -f -X '!*.@(yaml|yaml.j2|yaml.mako)' -- "${cur}") )
+            return 0
+            ;;
         "up"|"provision"|"destroy"|"shell")
             # Fetch list of instances from the 'incant list' command
             instance_names=$(incant --quiet list)
