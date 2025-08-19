@@ -3,8 +3,10 @@ import sys
 from pathlib import Path
 
 import yaml
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, exceptions as jinja_exceptions
 from mako.template import Template
+from mako import exceptions as mako_exceptions
+
 
 from .exceptions import ConfigurationError
 from .reporter import Reporter
@@ -24,7 +26,11 @@ class ConfigManager:
         self.no_config = no_config
         self.config_data = None
         if not self.no_config:
-            self.config_data = self.load_config()
+            try:
+                self.config_data = self.load_config()
+            except ConfigurationError as e:
+                # Re-raise to be caught by the CLI or tests
+                raise e
 
     def find_config_file(self):
         search_paths = []
@@ -33,7 +39,7 @@ class ConfigManager:
 
         base_names = ["incant", ".incant"]
         extensions = [".yaml", ".yaml.j2", ".yaml.mako"]
-        cwd = Path(os.getcwd())
+        cwd = Path.cwd()
 
         for name in base_names:
             for ext in extensions:
@@ -48,13 +54,11 @@ class ConfigManager:
         return None
 
     def load_config(self):
+        config_file = self.find_config_file()
+        if config_file is None:
+            return None
+
         try:
-            # Find the config file first
-            config_file = self.find_config_file()
-
-            if config_file is None:
-                return None
-
             # Read the config file content
             with open(config_file, "r", encoding="utf-8") as file:
                 content = file.read()
@@ -80,10 +84,13 @@ class ConfigManager:
             if self.verbose:
                 self.reporter.success(f"Config loaded successfully from {config_file}")
             return config_data
-        except yaml.YAMLError as e:
-            raise ConfigurationError(f"Error parsing YAML file: {e}") from e
+
         except FileNotFoundError as exc:
             raise ConfigurationError(f"Config file not found: {config_file}") from exc
+        except (jinja_exceptions.TemplateError, mako_exceptions.MakoException) as e:
+            raise ConfigurationError(f"Error rendering template {config_file}: {e}") from e
+        except yaml.YAMLError as e:
+            raise ConfigurationError(f"Error parsing YAML file {config_file}: {e}") from e
 
     def dump_config(self):
         if not self.config_data:
