@@ -144,37 +144,42 @@ class Incant:
     def incant_init(self):
         example_config = textwrap.dedent(
             """
-            instances:
-              container-client:
-                image: images:ubuntu/24.04
-                provision: |
+          instances:
+            basic-container:
+              image: images:ubuntu/24.04
+              devices:
+                root:
+                  size: 1GiB
+              wait: true # wait for instance to be ready (incus agent running)
+              shared_folder: false # disable shared folder (/incant) setup (default: enabled)
+              config: # any incus config options
+                limits.processes: 100
+            basic-vm:
+              image: images:ubuntu/24.04
+              vm: true
+              type: c1-m1 # 1 CPU, 1GB RAM
+            provisioned:
+              image: images:debian/13
+              provision: # a list of provisioning steps
+                - | # first, an inlined script
                   #!/bin/bash
                   set -xe
                   apt-get update
-                  apt-get -y install curl
-              vm-server:
-                image: images:debian/13
-                vm: true # KVM virtual machine, not container
-                devices:
-                  root:
-                    size: 20GB # set size of root device to 20GB
-                config: # incus config options
-                  limits.processes: 100
-                type: c2-m2 # 2 CPUs, 2 GB of RAM
-                provision:
-                  # configure SSH server. see examples/ssh.yaml for detailed options
-                  - ssh: true
-                  # first, a single command
-                  - apt-get update && apt-get -y install ruby
-                  # then, a script. the path can be relative to the current dir,
-                  # as incant will 'cd' to /incant
-                  # - examples/provision/web_server.rb # disabled to provide a working example
-                  # then a multi-line snippet that will be copied as a temporary file
-                  - |
-                    #!/bin/bash
-                    set -xe
-                    echo Done!
-        """
+                  apt-get -y install curl ruby
+                # then, a script. the path can be relative to the current dir,
+                # as incant will 'cd' to /incant, so the script will be available inside the instance
+                - examples/provision/web_server.rb
+                - ssh: true # configure an ssh server and provide access
+                # - ssh: # same with more configuration
+                #    clean_known_hosts: true (that's the default)
+                #    # authorized_keys: path to file (default: concatenate id_*.pub)
+                - copy: # copy a file using 'incus file push'
+                    source: ./README.md
+                    target: /tmp/README.md
+                    mode: "0644"
+                    uid: 0
+                    gid: 0
+            """
         )
 
         config_path = "incant.yaml"

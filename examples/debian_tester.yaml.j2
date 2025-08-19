@@ -1,5 +1,5 @@
 instances:
-{% for version in ['13', '12', '11', '10'] %}
+{% for version in ['13', '12', '11'] %}
   deb{{ version }}:
     image: images:debian/{{ version }}
 {% endfor %}
