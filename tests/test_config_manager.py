@@ -64,7 +64,7 @@ def test_find_config_explicit_path(tmp_path, mock_reporter):
 def test_find_config_default_names(tmp_path, monkeypatch, mock_reporter):
     """Test finding default config files in the current directory."""
     monkeypatch.chdir(tmp_path)
-    
+
     # Test incant.yaml
     (tmp_path / "incant.yaml").write_text(yaml.dump(VALID_CONFIG))
     cm = ConfigManager(mock_reporter)
@@ -162,7 +162,7 @@ def test_dump_config(tmp_path, monkeypatch, mock_reporter):
     captured_output = StringIO()
     monkeypatch.setattr(sys, "stdout", captured_output)
     cm.dump_config()
-    
+
     output = captured_output.getvalue()
     assert "test-instance" in output
     assert "ubuntu/22.04" in output

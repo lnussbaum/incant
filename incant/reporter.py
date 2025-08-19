@@ -1,4 +1,3 @@
-
 import click
 
 from .constants import CLICK_STYLE

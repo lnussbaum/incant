@@ -67,9 +67,9 @@ class Incant:
         for instance_name, instance_data in instances_to_process.items():
             # Wait for the agent to become ready before sharing the current directory
             while True:
-                if self.incus.is_agent_running(
+                if self.incus.is_agent_running(instance_name) and self.incus.is_agent_usable(
                     instance_name
-                ) and self.incus.is_agent_usable(instance_name):
+                ):
                     break
                 time.sleep(0.3)
             self.reporter.success(
