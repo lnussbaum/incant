@@ -21,7 +21,7 @@ _incant_completions() {
             ;;
         "up"|"provision"|"destroy"|"shell")
             # Fetch list of instances from the 'incant list' command
-            instance_names=$(incant --quiet list)
+            instance_names=$(incant list --no-error)
             if [ $? -ne 0 ]; then
                 COMPREPLY=( $(compgen -W "" -- ${cur}) )
                 return 0

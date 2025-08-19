@@ -4,7 +4,7 @@ import textwrap
 from incant.incus_cli import IncusCLI
 from .provisioning_manager import ProvisionManager
 from .config_manager import ConfigManager
-from .exceptions import IncantError, InstanceError
+from .exceptions import IncantError, InstanceError, ConfigurationError
 from .reporter import Reporter
 from .types import InstanceDict, ProvisionSteps  # pylint: disable=unused-import # noqa: F401
 
@@ -124,8 +124,20 @@ class Incant:
             self.reporter.success(f"Destroying instance {instance_name} ...")
             self.incus.destroy_instance(instance_name)
 
-    def list_instances(self):
-        """List all instances defined in the configuration."""
+    def list_instances(self, no_error: bool = False):
+        """List all instances defined in the configuration.
+
+        When no_error is True and no configuration is found, do nothing and return successfully.
+        """
+        if self.config_manager.config_data is None:
+            config = self.config_manager.load_config()
+            if config is None:
+                if no_error:
+                    return
+                raise ConfigurationError("No configuration loaded.")
+            self.config_manager.config_data = config
+        # Validate before listing
+        self.config_manager.validate_config()
         for instance_name in self.config_manager.config_data["instances"]:
             self.reporter.echo(f"{instance_name}")
 

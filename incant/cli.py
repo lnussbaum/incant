@@ -14,7 +14,7 @@ def cli(ctx, verbose, config):
     ctx.ensure_object(dict)
     reporter = Reporter()
     ctx.obj["REPORTER"] = reporter
-    ctx.obj["INCANT"] = Incant(reporter=reporter, verbose=verbose, config=config)
+    ctx.obj["OPTIONS"] = {"verbose": verbose, "config": config}
 
     if verbose:
         reporter.info(
@@ -39,7 +39,7 @@ def _handle_error(error: Exception, reporter: Reporter) -> None:
 def up(ctx, name: str):
     """Start and provision an instance or all instances if no name is provided."""
     try:
-        ctx.obj["INCANT"].up(name)
+        Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).up(name)
     except IncantError as e:
         _handle_error(e, ctx.obj["REPORTER"])
 
@@ -50,7 +50,7 @@ def up(ctx, name: str):
 def provision(ctx, name: str = None):
     """Provision an instance or all instances if no name is provided."""
     try:
-        ctx.obj["INCANT"].provision(name)
+        Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).provision(name)
     except IncantError as e:
         _handle_error(e, ctx.obj["REPORTER"])
 
@@ -61,7 +61,7 @@ def provision(ctx, name: str = None):
 def shell(ctx, name: str):
     """Open a shell into an instance. If no name is given and there is only one instance, use it."""
     try:
-        ctx.obj["INCANT"].shell(name)
+        Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).shell(name)
     except IncantError as e:
         _handle_error(e, ctx.obj["REPORTER"])
 
@@ -72,7 +72,7 @@ def shell(ctx, name: str):
 def destroy(ctx, name: str):
     """Destroy an instance or all instances if no name is provided."""
     try:
-        ctx.obj["INCANT"].destroy(name)
+        Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).destroy(name)
     except IncantError as e:
         _handle_error(e, ctx.obj["REPORTER"])
 
@@ -82,17 +82,18 @@ def destroy(ctx, name: str):
 def dump(ctx):
     """Show the generated configuration file."""
     try:
-        ctx.obj["INCANT"].dump_config()
+        Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).dump_config()
     except IncantError as e:
         _handle_error(e, ctx.obj["REPORTER"])
 
 
 @cli.command(name="list")
+@click.option("--no-error", is_flag=True, help="Do not error if no configuration is found.")
 @click.pass_context
-def _list_command(ctx):
+def _list_command(ctx, no_error: bool):
     """List all instances defined in the configuration."""
     try:
-        ctx.obj["INCANT"].list_instances()
+        Incant(reporter=ctx.obj["REPORTER"], no_config=True, **ctx.obj["OPTIONS"]).list_instances(no_error=no_error)
     except IncantError as e:
         _handle_error(e, ctx.obj["REPORTER"])
 
