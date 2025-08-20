@@ -132,6 +132,33 @@ $ incant destroy my-instance
 $ incant dump
 ```
 
+## Caveats
+
+### Shared folders don't work on ARM64
+
+It can be disabled using:
+```yaml
+instances:
+  my-instance:
+    shared_folder: false
+```
+
+This is [Incus issue #91](https://github.com/zabbly/incus/issues/91) and [virtiofsd issue #212](https://gitlab.com/virtio-fs/virtiofsd/-/issues/212).
+
+### Virtual machines for RHEL-based distributions need an explicit agent:config device
+
+This can be added using a pre-launch command, with:
+```yaml
+instances:
+  alma9vm:
+    image: images:almalinux/9
+    vm: true
+    pre-launch:
+      - config device add alma9vm agent disk source=agent:config
+```
+
+See [Incus documentation](https://linuxcontainers.org/incus/docs/main/reference/devices_disk/)
+
 ## Incant compared to Vagrant
 
 Incant is inspired by Vagrant, and intended as an Incus-based replacement for Vagrant.
