@@ -236,6 +236,8 @@ class ConfigManager:
 
         # The top-level keys of the instances dictionary are the names
         for name, instance in self.config_data["instances"].items():
+            if instance is None:
+                raise ConfigurationError(f"Instance '{name}' cannot be empty.")
             if "image" not in instance:
                 raise ConfigurationError(f"Instance '{name}' is missing required 'image' field.")
 

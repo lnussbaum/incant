@@ -153,6 +153,16 @@ def test_validate_config_unknown_field(tmp_path, mock_reporter):
         cm.validate_config()
 
 
+def test_validate_config_empty_instance(tmp_path, mock_reporter):
+    """Test that an empty instance fails validation."""
+    config = {"instances": {"test-instance": None}}
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_reporter, config_path=str(config_file))
+    with pytest.raises(ConfigurationError, match="Instance 'test-instance' cannot be empty."):
+        cm.validate_config()
+
+
 def test_dump_config(tmp_path, monkeypatch, mock_reporter):
     """Test dumping the configuration to stdout."""
     config_file = tmp_path / "incant.yaml"
