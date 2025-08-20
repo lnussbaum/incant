@@ -30,6 +30,7 @@ bandit = "^1.8.6"
 isort = "^6.0.1"
 radon = "^6.0.1"
 ruff = "^0.12.9"
+flake8 = "^7.1.0"
 
 [tool.black]
 line-length = 100
@@ -48,3 +49,15 @@ line-length = 100
 [tool.ruff.lint]
 # Enable a selection of rules from flake8 (E, F, W), isort (I), bugbear (B), and pylint (PL)
 select = ["E", "F", "W", "I", "B", "PL"]
+
+[tool.flake8]
+max-line-length = 110
+
+[tool.pylint.main]
+fail-under = 8
+ignore-paths = ["tests/"]
+disable = "missing-docstring" # From .pylintrc
+max-branches = 13 # From .pylintrc
+
+[tool.pylint.format]
+max-line-length = 100

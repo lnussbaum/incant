@@ -1,8 +1,0 @@
-[MESSAGES CONTROL]
-disable=missing-docstring
-
-[DESIGN]
-max-branches=13
-
-[FORMAT]
-max-line-length=110
