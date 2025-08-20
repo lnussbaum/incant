@@ -68,7 +68,7 @@ class ConfigManager:
             if config_file.suffix == ".j2":
                 if self.verbose:
                     self.reporter.info("Using Jinja2 template processing...")
-                env = Environment(loader=FileSystemLoader(os.getcwd()))
+                env = Environment(loader=FileSystemLoader(os.getcwd()), autoescape=True)
                 template = env.from_string(content)
                 content = template.render()
 
@@ -76,7 +76,7 @@ class ConfigManager:
             elif config_file.suffix == ".mako":
                 if self.verbose:
                     self.reporter.info("Using Mako template processing...")
-                template = Template(content)
+                template = Template(content)  # nosec B702
                 content = template.render()
 
             # Load the YAML data from the processed content

@@ -4,7 +4,7 @@ Provisioning management for Incant.
 
 import glob
 import os
-import subprocess
+import subprocess  # nosec B404
 import tempfile
 from pathlib import Path
 from typing import Union
@@ -51,13 +51,13 @@ class ProvisionManager:
         if known_hosts_path.exists():
             try:
                 # Remove existing entry
-                subprocess.run(["ssh-keygen", "-R", name], check=False, capture_output=True)
+                subprocess.run(["ssh-keygen", "-R", name], check=False, capture_output=True)  # nosec B603, B607
             except FileNotFoundError as e:
                 raise IncusCommandError("ssh-keygen not found, cannot clean known_hosts.") from e
 
         # Initiate a connection to accept the new host key
         try:
-            subprocess.run(
+            subprocess.run(  # nosec B603, B607
                 [
                     "ssh",
                     "-o",

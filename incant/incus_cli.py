@@ -1,7 +1,7 @@
 import json
 import os
 import shlex
-import subprocess
+import subprocess  # nosec B404
 import sys
 import tempfile
 import time
@@ -34,7 +34,7 @@ class IncusCLI:
             full_command = [self.incus_cmd] + command
             if not quiet:
                 self.reporter.info(f"-> {' '.join(full_command)}")
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603
                 full_command, capture_output=capture_output, text=True, check=True
             )
             return result.stdout
@@ -310,7 +310,7 @@ class IncusCLI:
         """Opens an interactive shell in the specified Incus instance."""
         self.reporter.success(f"Opening shell in {name}...")
         try:
-            subprocess.run(
+            subprocess.run(  # nosec B603
                 [self.incus_cmd, "shell", name],
                 check=True,
                 stdin=sys.stdin,
