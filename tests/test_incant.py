@@ -1,8 +1,9 @@
-import pytest
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+
+from incant.exceptions import ConfigurationError, IncantError, InstanceError
 from incant.incant import Incant
-from incant.exceptions import ConfigurationError, InstanceError, IncantError
 from incant.types import InstanceConfig
 
 
@@ -33,29 +34,34 @@ class MockReporter:
 def mock_reporter():
     return MockReporter()
 
+
 @pytest.fixture
 def mock_config_manager():
     mock = Mock()
     mock.instance_configs = {}
     return mock
 
+
 @pytest.fixture
 def mock_incus_cli():
     mock = Mock()
     return mock
+
 
 @pytest.fixture
 def mock_provision_manager():
     mock = Mock()
     return mock
 
+
 @pytest.fixture
 def incant_app(mock_reporter, mock_config_manager, mock_incus_cli, mock_provision_manager):
-    with patch('incant.incant.ConfigManager', return_value=mock_config_manager):
+    with patch("incant.incant.ConfigManager", return_value=mock_config_manager):
         app = Incant(reporter=mock_reporter)
         app.incus = mock_incus_cli
         app.provisioner = mock_provision_manager
         return app
+
 
 class TestIncant:
     def test_list_instances_success(self, incant_app, mock_config_manager, mock_reporter):
@@ -79,15 +85,21 @@ class TestIncant:
         assert not mock_config_manager.instance_configs
 
     def test_destroy_instance_exists(self, incant_app, mock_config_manager, mock_incus_cli, mock_reporter):
-        mock_config_manager.instance_configs = {"test-instance": InstanceConfig(name="test-instance", image="img")}
+        mock_config_manager.instance_configs = {
+            "test-instance": InstanceConfig(name="test-instance", image="img")
+        }
         mock_incus_cli.is_instance.return_value = True
         incant_app.destroy("test-instance")
         mock_incus_cli.is_instance.assert_called_once_with("test-instance")
         mock_incus_cli.destroy_instance.assert_called_once_with("test-instance")
         assert ("success", "Destroying instance test-instance ...") in mock_reporter.messages
 
-    def test_destroy_instance_not_exists(self, incant_app, mock_config_manager, mock_incus_cli, mock_reporter):
-        mock_config_manager.instance_configs = {"test-instance": InstanceConfig(name="test-instance", image="img")}
+    def test_destroy_instance_not_exists(
+        self, incant_app, mock_config_manager, mock_incus_cli, mock_reporter
+    ):
+        mock_config_manager.instance_configs = {
+            "test-instance": InstanceConfig(name="test-instance", image="img")
+        }
         mock_incus_cli.is_instance.return_value = False
         incant_app.destroy("test-instance")
         mock_incus_cli.is_instance.assert_called_once_with("test-instance")
@@ -106,13 +118,17 @@ class TestIncant:
         assert ("success", "Destroying instance instance1 ...") in mock_reporter.messages
         assert ("success", "Destroying instance instance2 ...") in mock_reporter.messages
 
-    def test_provision_single_instance(self, incant_app, mock_config_manager, mock_provision_manager, mock_reporter):
+    def test_provision_single_instance(
+        self, incant_app, mock_config_manager, mock_provision_manager, mock_reporter
+    ):
         instance_config = InstanceConfig(name="test-instance", image="img", provision=["step1"])
         mock_config_manager.instance_configs = {"test-instance": instance_config}
         incant_app.provision("test-instance")
         mock_provision_manager.provision.assert_called_once_with("test-instance", ["step1"])
 
-    def test_provision_all_instances(self, incant_app, mock_config_manager, mock_provision_manager, mock_reporter):
+    def test_provision_all_instances(
+        self, incant_app, mock_config_manager, mock_provision_manager, mock_reporter
+    ):
         instance_config1 = InstanceConfig(name="instance1", image="img1", provision=["stepA"])
         instance_config2 = InstanceConfig(name="instance2", image="img2", provision=["stepB"])
         mock_config_manager.instance_configs = {
@@ -125,7 +141,9 @@ class TestIncant:
         assert mock_provision_manager.provision.call_count == 2
 
     def test_shell_single_instance(self, incant_app, mock_config_manager, mock_incus_cli):
-        mock_config_manager.instance_configs = {"single-instance": InstanceConfig(name="single-instance", image="img")}
+        mock_config_manager.instance_configs = {
+            "single-instance": InstanceConfig(name="single-instance", image="img")
+        }
         incant_app.shell()
         mock_incus_cli.shell.assert_called_once_with("single-instance")
 
@@ -146,13 +164,15 @@ class TestIncant:
             incant_app.shell()
 
     def test_shell_instance_not_found(self, incant_app, mock_config_manager):
-        mock_config_manager.instance_configs = {"existing-instance": InstanceConfig(name="existing-instance", image="img")}
+        mock_config_manager.instance_configs = {
+            "existing-instance": InstanceConfig(name="existing-instance", image="img")
+        }
         with pytest.raises(InstanceError, match="Instance 'non-existent' not found in config"):
             incant_app.shell("non-existent")
 
-    @patch('incant.incant.os.path.exists')
-    @patch('builtins.open', new_callable=MagicMock)
-    @patch('builtins.print')
+    @patch("incant.incant.os.path.exists")
+    @patch("builtins.open", new_callable=MagicMock)
+    @patch("builtins.print")
     def test_incant_init_success(self, mock_print, mock_open, mock_exists, incant_app):
         mock_exists.return_value = False
         incant_app.incant_init()
@@ -161,16 +181,20 @@ class TestIncant:
         mock_open.return_value.__enter__.return_value.write.assert_called_once()
         mock_print.assert_called_once_with("Example configuration written to incant.yaml")
 
-    @patch('incant.incant.os.path.exists')
+    @patch("incant.incant.os.path.exists")
     def test_incant_init_file_exists(self, mock_exists, incant_app):
         mock_exists.return_value = True
         with pytest.raises(IncantError, match="incant.yaml already exists. Aborting."):
             incant_app.incant_init()
         mock_exists.assert_called_once_with("incant.yaml")
 
-    @patch('incant.incant.time.sleep', return_value=None)
-    def test_up_single_instance_no_wait_no_provision_no_shared_folder(self, mock_sleep, incant_app, mock_config_manager, mock_incus_cli, mock_reporter):
-        instance_config = InstanceConfig(name="test-instance", image="img", wait=False, provision=False, shared_folder=False)
+    @patch("incant.incant.time.sleep", return_value=None)
+    def test_up_single_instance_no_wait_no_provision_no_shared_folder(
+        self, mock_sleep, incant_app, mock_config_manager, mock_incus_cli, mock_reporter
+    ):
+        instance_config = InstanceConfig(
+            name="test-instance", image="img", wait=False, provision=False, shared_folder=False
+        )
         mock_config_manager.instance_configs = {"test-instance": instance_config}
         mock_incus_cli.is_agent_running.return_value = True
         mock_incus_cli.is_agent_usable.return_value = True
@@ -186,13 +210,17 @@ class TestIncant:
         assert ("success", "Creating instance test-instance with image img...") in mock_reporter.messages
         assert ("success", "Sharing current directory to test-instance:/incant ...") in mock_reporter.messages
 
-    @patch('incant.incant.time.sleep', return_value=None)
-    def test_up_single_instance_with_wait(self, mock_sleep, incant_app, mock_config_manager, mock_incus_cli, mock_reporter):
-        instance_config = InstanceConfig(name="test-instance", image="img", wait=True, provision=False, shared_folder=False)
+    @patch("incant.incant.time.sleep", return_value=None)
+    def test_up_single_instance_with_wait(
+        self, mock_sleep, incant_app, mock_config_manager, mock_incus_cli, mock_reporter
+    ):
+        instance_config = InstanceConfig(
+            name="test-instance", image="img", wait=True, provision=False, shared_folder=False
+        )
         mock_config_manager.instance_configs = {"test-instance": instance_config}
         mock_incus_cli.is_agent_running.return_value = True
         mock_incus_cli.is_agent_usable.return_value = True
-        mock_incus_cli.is_instance_ready.side_effect = [False, True] # Simulate waiting
+        mock_incus_cli.is_instance_ready.side_effect = [False, True]  # Simulate waiting
 
         incant_app.up("test-instance")
 
@@ -204,13 +232,23 @@ class TestIncant:
         assert ("info", "Waiting for test-instance to become ready...") in mock_reporter.messages
         assert ("success", "Instance test-instance is ready.") in mock_reporter.messages
 
-    @patch('incant.incant.time.sleep', return_value=None)
-    def test_up_single_instance_with_provision(self, mock_sleep, incant_app, mock_config_manager, mock_incus_cli, mock_provision_manager, mock_reporter):
-        instance_config = InstanceConfig(name="test-instance", image="img", provision=["script.sh"], shared_folder=False)
+    @patch("incant.incant.time.sleep", return_value=None)
+    def test_up_single_instance_with_provision(
+        self,
+        mock_sleep,
+        incant_app,
+        mock_config_manager,
+        mock_incus_cli,
+        mock_provision_manager,
+        mock_reporter,
+    ):
+        instance_config = InstanceConfig(
+            name="test-instance", image="img", provision=["script.sh"], shared_folder=False
+        )
         mock_config_manager.instance_configs = {"test-instance": instance_config}
         mock_incus_cli.is_agent_running.return_value = True
         mock_incus_cli.is_agent_usable.return_value = True
-        mock_incus_cli.is_instance_ready.return_value = True # Provision implies wait
+        mock_incus_cli.is_instance_ready.return_value = True  # Provision implies wait
 
         incant_app.up("test-instance")
 
@@ -220,13 +258,15 @@ class TestIncant:
         mock_incus_cli.is_instance_ready.assert_called_once_with("test-instance", True)
         incant_app.provisioner.provision.assert_called_once_with("test-instance", ["script.sh"])
 
-    @patch('incant.incant.time.sleep', return_value=None)
-    def test_up_single_instance_with_shared_folder(self, mock_sleep, incant_app, mock_config_manager, mock_incus_cli, mock_reporter):
+    @patch("incant.incant.time.sleep", return_value=None)
+    def test_up_single_instance_with_shared_folder(
+        self, mock_sleep, incant_app, mock_config_manager, mock_incus_cli, mock_reporter
+    ):
         instance_config = InstanceConfig(name="test-instance", image="img", shared_folder=True, wait=True)
         mock_config_manager.instance_configs = {"test-instance": instance_config}
         mock_incus_cli.is_agent_running.return_value = True
         mock_incus_cli.is_agent_usable.return_value = True
-        mock_incus_cli.is_instance_ready.return_value = True # Shared folder implies wait
+        mock_incus_cli.is_instance_ready.return_value = True  # Shared folder implies wait
 
         incant_app.up("test-instance")
 
@@ -236,10 +276,16 @@ class TestIncant:
         mock_incus_cli.is_instance_ready.assert_called_once_with("test-instance", True)
         mock_incus_cli.create_shared_folder.assert_called_once_with("test-instance")
 
-    @patch('incant.incant.time.sleep', return_value=None)
-    def test_up_multiple_instances(self, mock_sleep, incant_app, mock_config_manager, mock_incus_cli, mock_reporter):
-        instance_config1 = InstanceConfig(name="instance1", image="img1", wait=False, provision=False, shared_folder=False)
-        instance_config2 = InstanceConfig(name="instance2", image="img2", wait=False, provision=False, shared_folder=False)
+    @patch("incant.incant.time.sleep", return_value=None)
+    def test_up_multiple_instances(
+        self, mock_sleep, incant_app, mock_config_manager, mock_incus_cli, mock_reporter
+    ):
+        instance_config1 = InstanceConfig(
+            name="instance1", image="img1", wait=False, provision=False, shared_folder=False
+        )
+        instance_config2 = InstanceConfig(
+            name="instance2", image="img2", wait=False, provision=False, shared_folder=False
+        )
         mock_config_manager.instance_configs = {
             "instance1": instance_config1,
             "instance2": instance_config2,

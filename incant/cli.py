@@ -97,9 +97,7 @@ def dump(ctx):
 def _list_command(ctx, no_error: bool):
     """List all instances defined in the configuration."""
     try:
-        Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).list_instances(
-            no_error=no_error
-        )
+        Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).list_instances(no_error=no_error)
     except IncantError as e:
         _handle_error(e, ctx.obj["REPORTER"])
 

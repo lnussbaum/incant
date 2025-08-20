@@ -169,6 +169,7 @@ def test_find_config_verbose_output(tmp_path, mock_reporter):
     cm.find_config_file()
     assert any("Config found at:" in msg for _, msg in mock_reporter.messages)
 
+
 def test_load_config_verbose_output(tmp_path, mock_reporter):
     """Test verbose output when config is loaded successfully."""
     config_file = tmp_path / "incant.yaml"
@@ -176,6 +177,7 @@ def test_load_config_verbose_output(tmp_path, mock_reporter):
     cm = ConfigManager(mock_reporter, config_path=str(config_file), verbose=True)
     cm.load_config()
     assert any("Config loaded successfully from" in msg for _, msg in mock_reporter.messages)
+
 
 def test_validate_config_no_instances(tmp_path, mock_reporter):
     """Test that validate_config raises ConfigurationError if no instances are found."""
@@ -185,13 +187,15 @@ def test_validate_config_no_instances(tmp_path, mock_reporter):
     with pytest.raises(ConfigurationError, match="No instances found in config"):
         ConfigManager(mock_reporter, config_path=str(config_file))
 
+
 def test_init_with_empty_config_file(tmp_path, mock_reporter):
     """Test that ConfigManager handles an empty config file gracefully."""
     config_file = tmp_path / "incant.yaml"
-    config_file.write_text("") # Empty file
+    config_file.write_text("")  # Empty file
     cm = ConfigManager(mock_reporter, config_path=str(config_file))
     assert cm._config_data is None
     assert cm.instance_configs == {}
+
 
 def test_init_with_no_instances_in_config(tmp_path, mock_reporter):
     """Test that ConfigManager handles a config file with no instances section."""
@@ -201,6 +205,7 @@ def test_init_with_no_instances_in_config(tmp_path, mock_reporter):
     with pytest.raises(ConfigurationError, match="No instances found in config"):
         ConfigManager(mock_reporter, config_path=str(config_file))
 
+
 def test_valid_config_no_provision(tmp_path, mock_reporter):
     """Test a valid config without a 'provision' section."""
     config = {"instances": {"test": {"image": "ubuntu"}}}
@@ -209,6 +214,7 @@ def test_valid_config_no_provision(tmp_path, mock_reporter):
     cm = ConfigManager(mock_reporter, config_path=str(config_file))
     # No exception should be raised
     assert cm.instance_configs["test"].provision is None
+
 
 def test_valid_config_no_pre_launch(tmp_path, mock_reporter):
     """Test a valid config without a 'pre-launch' section."""

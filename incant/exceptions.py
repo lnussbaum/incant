@@ -2,6 +2,8 @@
 Custom exceptions for Incant.
 """
 
+from typing import Optional
+
 
 class IncantError(Exception):
     """Base exception for all Incant errors."""
@@ -21,9 +23,6 @@ class ProjectError(IncantError):
 
 class ProvisioningError(IncantError):
     """Raised when there's an issue with provisioning operations."""
-
-
-from typing import Optional
 
 
 class IncusCommandError(IncantError):

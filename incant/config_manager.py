@@ -2,14 +2,13 @@ import os
 import re
 import sys
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
 from jinja2 import exceptions as jinja_exceptions
 from mako import exceptions as mako_exceptions
 from mako.template import Template
-
-from typing import Any, Dict, Optional
 
 from .exceptions import ConfigurationError
 from .reporter import Reporter
@@ -50,9 +49,7 @@ class ConfigManager:
             current_instance_data = instance_data_from_loop if instance_data_from_loop is not None else {}
 
             if "image" not in current_instance_data:
-                raise ConfigurationError(
-                    f"Instance '{instance_name}' is missing required 'image' field."
-                )
+                raise ConfigurationError(f"Instance '{instance_name}' is missing required 'image' field.")
 
             instance_data_copy = current_instance_data.copy()
             instance_data_copy["name"] = instance_name
