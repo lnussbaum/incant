@@ -380,3 +380,53 @@ def test_validate_provision_copy_new_options_invalid(tmp_path, mock_reporter):
         cm = ConfigManager(mock_reporter, config_path=str(config_file))
         with pytest.raises(ConfigurationError):
             cm.validate_config()
+
+
+def test_validate_pre_launch_valid(tmp_path, mock_reporter):
+    """Test that a valid pre-launch config passes validation."""
+    config = {
+        "instances": {
+            "test-instance": {
+                "image": "ubuntu/22.04",
+                "pre-launch": ["echo 'hello'", "ls -la"],
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_reporter, config_path=str(config_file))
+    cm.validate_config()  # Should not raise
+
+
+def test_validate_pre_launch_invalid_type(tmp_path, mock_reporter):
+    """Test that a pre-launch field with an invalid type fails validation."""
+    config = {
+        "instances": {
+            "test-instance": {
+                "image": "ubuntu/22.04",
+                "pre-launch": "echo 'hello'",
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_reporter, config_path=str(config_file))
+    with pytest.raises(ConfigurationError, match="must be a list of strings"):
+        cm.validate_config()
+
+
+def test_validate_pre_launch_invalid_command_type(tmp_path, mock_reporter):
+    """Test that a pre-launch command with an invalid type fails validation."""
+    config = {
+        "instances": {
+            "test-instance": {
+                "image": "ubuntu/22.04",
+                "pre-launch": ["echo 'hello'", 123],
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_reporter, config_path=str(config_file))
+    with pytest.raises(ConfigurationError, match="must be a string"):
+        cm.validate_config()

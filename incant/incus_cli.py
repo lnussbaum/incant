@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 import tempfile
 import os
+import shlex
 
 
 import time
@@ -77,11 +78,12 @@ class IncusCLI:
         devices: Optional[Dict[str, Dict[str, str]]] = None,
         network: Optional[str] = None,
         instance_type: Optional[str] = None,
+        pre_launch_cmds: Optional[List[str]] = None,
     ) -> None:
         """Creates a new instance with optional parameters."""
         if self.is_instance(name):
             raise InstanceError(f'Instance "{name}" already exists.')
-        command = ["launch", image, name]
+        command = ["launch" if not pre_launch_cmds else "create", image, name]
 
         if vm:
             command.append("--vm")
@@ -108,6 +110,13 @@ class IncusCLI:
             command.extend(["--type", instance_type])
 
         self._run_command(command)
+
+        if pre_launch_cmds:
+            self.reporter.info(f"Executing pre-launch commands for {name}...")
+            for cmd in pre_launch_cmds:
+                self._run_command(shlex.split(cmd))
+            self.reporter.info(f"Starting {name}...")
+            self._run_command(["start", name])
 
     def create_shared_folder(self, name: str) -> None:
         curdir = Path.cwd()

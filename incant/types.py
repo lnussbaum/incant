@@ -6,3 +6,6 @@ InstanceDict: TypeAlias = dict[str, dict[str, Any]]
 
 ProvisionStep: TypeAlias = Union[str, dict[str, Any]]
 ProvisionSteps: TypeAlias = Union[list[ProvisionStep], str]
+
+PreLaunchCommand: TypeAlias = str
+PreLaunchCommands: TypeAlias = list[PreLaunchCommand]

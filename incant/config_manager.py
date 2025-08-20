@@ -215,6 +215,19 @@ class ConfigManager:
                     f"Provisioning for instance '{name}' must be a string or a list of steps."
                 )
 
+    def _validate_pre_launch(self, instance, name):
+        if "pre-launch" in instance and instance["pre-launch"] is not None:
+            pre_launch_cmds = instance["pre-launch"]
+            if not isinstance(pre_launch_cmds, list):
+                raise ConfigurationError(
+                    f"Pre-launch commands for instance '{name}' must be a list of strings."
+                )
+            for cmd_idx, cmd in enumerate(pre_launch_cmds):
+                if not isinstance(cmd, str):
+                    raise ConfigurationError(
+                        f"Pre-launch command {cmd_idx} in instance '{name}' must be a string."
+                    )
+
     def validate_config(self):
         if not self.config_data:
             raise ConfigurationError("No configuration loaded.")
@@ -231,6 +244,7 @@ class ConfigManager:
             "type",
             "wait",
             "provision",
+            "pre-launch",
             "shared_folder",
         }
 
@@ -247,3 +261,4 @@ class ConfigManager:
 
             # Validate 'provision' field
             self._validate_provisioning(instance, name)
+            self._validate_pre_launch(instance, name)

@@ -51,6 +51,7 @@ class Incant:
             devices = instance_data.get("devices", None)
             network = instance_data.get("network", None)
             instance_type = instance_data.get("type", None)
+            pre_launch_cmds = instance_data.get("pre-launch", [])
 
             self.reporter.success(
                 f"Creating instance {instance_name} with image {image}...",
@@ -64,6 +65,7 @@ class Incant:
                 devices=devices,
                 network=network,
                 instance_type=instance_type,
+                pre_launch_cmds=pre_launch_cmds,
             )
 
         # Step 2 -- Create shared folder and provision
