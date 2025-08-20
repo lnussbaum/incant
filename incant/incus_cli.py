@@ -6,16 +6,19 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from .exceptions import IncusCommandError, InstanceError
 from .reporter import Reporter
+from .types import FilePushConfig, InstanceConfig
 
 
 class IncusCLI:
     """
     A Python wrapper for the Incus CLI interface.
     """
+
+    MAX_RETRY_ATTEMPTS = 2
 
     def __init__(self, reporter: Reporter, incus_cmd: str = "incus"):
         self.reporter = reporter
@@ -65,55 +68,48 @@ class IncusCLI:
         command = ["project", "create", name]
         self._run_command(command)
 
-    def create_instance(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
-        self,
-        name: str,
-        image: str,
-        profiles: Optional[List[str]] = None,
-        vm: bool = False,
-        config: Optional[Dict[str, str]] = None,
-        devices: Optional[Dict[str, Dict[str, str]]] = None,
-        network: Optional[str] = None,
-        instance_type: Optional[str] = None,
-        pre_launch_cmds: Optional[List[str]] = None,
-    ) -> None:
-        """Creates a new instance with optional parameters."""
-        if self.is_instance(name):
-            raise InstanceError(f'Instance "{name}" already exists.')
-        command = ["launch" if not pre_launch_cmds else "create", image, name]
-
-        if vm:
+    def _build_launch_command(self, instance_config: InstanceConfig) -> List[str]:
+        command = [
+            "launch" if not instance_config.pre_launch_cmds else "create",
+            instance_config.image,
+            instance_config.name,
+        ]
+        if instance_config.vm:
             command.append("--vm")
-
-        if profiles:
-            for profile in profiles:
+        if instance_config.profiles:
+            for profile in instance_config.profiles:
                 command.extend(["--profile", profile])
-
-        if config:
-            for key, value in config.items():
+        if instance_config.config:
+            for key, value in instance_config.config.items():
                 command.extend(["--config", f"{key}={value}"])
-
-        if devices:
-            for dev_name, dev_attrs in devices.items():
+        if instance_config.devices:
+            for dev_name, dev_attrs in instance_config.devices.items():
                 dev_str = f"{dev_name}"
                 for k, v in dev_attrs.items():
                     dev_str += f",{k}={v}"
                 command.extend(["--device", dev_str])
+        if instance_config.network:
+            command.extend(["--network", instance_config.network])
+        if instance_config.instance_type:
+            command.extend(["--type", instance_config.instance_type])
+        return command
 
-        if network:
-            command.extend(["--network", network])
+    def create_instance(self, instance_config: InstanceConfig) -> None:
+        """Creates a new instance with optional parameters."""
+        if self.is_instance(instance_config.name):
+            raise InstanceError(f'Instance "{instance_config.name}" already exists.')
 
-        if instance_type:
-            command.extend(["--type", instance_type])
-
+        command = self._build_launch_command(instance_config)
         self._run_command(command)
 
-        if pre_launch_cmds:
-            self.reporter.info(f"Executing pre-launch commands for {name}...")
-            for cmd in pre_launch_cmds:
+        if instance_config.pre_launch_cmds:
+            self.reporter.info(
+                f"Executing pre-launch commands for {instance_config.name}..."
+            )
+            for cmd in instance_config.pre_launch_cmds:
                 self._run_command(shlex.split(cmd))
-            self.reporter.info(f"Starting {name}...")
-            self._run_command(["start", name])
+            self.reporter.info(f"Starting {instance_config.name}...")
+            self._run_command(["start", instance_config.name])
 
     def create_shared_folder(self, name: str) -> None:
         curdir = Path.cwd()
@@ -152,7 +148,7 @@ class IncusCLI:
                     )
                     return True  # Success!
                 except IncusCommandError:
-                    if attempt < 2:
+                    if attempt < self.MAX_RETRY_ATTEMPTS:
                         time.sleep(1)
                     # On last attempt, fall through to re-create device
 
@@ -260,7 +256,14 @@ class IncusCLI:
                     temp_file.write(script)
 
                 # Copy the file to the instance
-                self.file_push(name, temp_path, temp_path, quiet=True)
+                self.file_push(
+                    FilePushConfig(
+                        instance_name=name,
+                        source=temp_path,
+                        target=temp_path,
+                        quiet=True,
+                    )
+                )
 
                 # Execute the script after copying
                 self.exec(
@@ -277,34 +280,28 @@ class IncusCLI:
                 # Clean up the local temporary file
                 os.remove(temp_path)
 
-    def file_push(  # pylint: disable=too-many-arguments,too-many-positional-arguments
-        self,
-        instance_name: str,
-        source: str,
-        target: str,
-        uid: Optional[int] = None,
-        gid: Optional[int] = None,
-        mode: Optional[str] = None,
-        recursive: bool = False,
-        create_dirs: bool = False,
-        quiet: bool = False,
-    ) -> None:
+    def file_push(self, file_push_config: FilePushConfig) -> None:
         """Copies a file or directory to an Incus instance."""
-        if not quiet:
-            self.reporter.success(f"Copying {source} to {instance_name}:{target}...")
+        if not file_push_config.quiet:
+            self.reporter.success(
+                f"Copying {file_push_config.source} to "
+                f"{file_push_config.instance_name}:{file_push_config.target}..."
+            )
         command = ["file", "push"]
-        if uid is not None:
-            command.extend(["--uid", str(uid)])
-        if gid is not None:
-            command.extend(["--gid", str(gid)])
-        if mode is not None:
-            command.extend(["--mode", mode])
-        if recursive:
+        if file_push_config.uid is not None:
+            command.extend(["--uid", str(file_push_config.uid)])
+        if file_push_config.gid is not None:
+            command.extend(["--gid", str(file_push_config.gid)])
+        if file_push_config.mode is not None:
+            command.extend(["--mode", file_push_config.mode])
+        if file_push_config.recursive:
             command.append("--recursive")
-        if create_dirs:
+        if file_push_config.create_dirs:
             command.append("--create-dirs")
-        command.extend([source, f"{instance_name}{target}"])
-        self._run_command(command, capture_output=False, quiet=quiet)
+        command.extend(
+            [file_push_config.source, f"{file_push_config.instance_name}{file_push_config.target}"]
+        )
+        self._run_command(command, capture_output=False, quiet=file_push_config.quiet)
 
     def shell(self, name: str) -> None:
         """Opens an interactive shell in the specified Incus instance."""

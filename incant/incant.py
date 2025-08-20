@@ -8,7 +8,7 @@ from .config_manager import ConfigManager
 from .exceptions import ConfigurationError, IncantError, InstanceError
 from .provisioning_manager import ProvisionManager
 from .reporter import Reporter
-from .types import InstanceDict  # pylint: disable=unused-import # noqa: F401
+from .types import InstanceDict
 
 
 class Incant:
@@ -27,98 +27,76 @@ class Incant:
         self.incus = IncusCLI(self.reporter)
         self.provisioner = ProvisionManager(self.incus, self.reporter)
 
-    def _get_instances(self, name: str = None) -> InstanceDict:
-        """Helper to get instances from config, either all or a specific one."""
-        instances = self.config_manager.config_data["instances"]
+    def _get_instance_configs(self, name: str = None) -> InstanceDict:
+        """Helper to get instance configs, either all or a specific one."""
+        instance_configs = self.config_manager.instance_configs
         if name:
-            if name not in instances:
+            if name not in instance_configs:
                 raise InstanceError(f"Instance '{name}' not found in config.")
-            return {name: instances[name]}
-        return instances
+            return {name: instance_configs[name]}
+        return instance_configs
 
     def dump_config(self):
         self.config_manager.dump_config()
 
     def up(self, name=None):
-        instances_to_process = self._get_instances(name)
+        instance_configs = self._get_instance_configs(name)
 
         # Step 1 -- Create instances (we do this for all instances so that they can
         # boot in parallel)
-        for instance_name, instance_data in instances_to_process.items():
-            # Process the instance
-            image = instance_data["image"]
-
-            vm = instance_data.get("vm", False)
-            profiles = instance_data.get("profiles", None)
-            config = instance_data.get("config", None)
-            devices = instance_data.get("devices", None)
-            network = instance_data.get("network", None)
-            instance_type = instance_data.get("type", None)
-            pre_launch_cmds = instance_data.get("pre-launch", [])
-
+        for instance_config in instance_configs.values():
             self.reporter.success(
-                f"Creating instance {instance_name} with image {image}...",
+                f"Creating instance {instance_config.name} with image {instance_config.image}...",
             )
-            self.incus.create_instance(
-                instance_name,
-                image,
-                profiles=profiles,
-                vm=vm,
-                config=config,
-                devices=devices,
-                network=network,
-                instance_type=instance_type,
-                pre_launch_cmds=pre_launch_cmds,
-            )
+            self.incus.create_instance(instance_config)
 
         # Step 2 -- Create shared folder and provision
-        for instance_name, instance_data in instances_to_process.items():
+        for instance_config in instance_configs.values():
             # Wait for the agent to become ready before sharing the current directory
             while True:
-                if self.incus.is_agent_running(instance_name) and self.incus.is_agent_usable(
-                    instance_name
-                ):
+                if self.incus.is_agent_running(
+                    instance_config.name
+                ) and self.incus.is_agent_usable(instance_config.name):
                     break
                 time.sleep(0.3)
             self.reporter.success(
-                f"Sharing current directory to {instance_name}:/incant ...",
+                f"Sharing current directory to {instance_config.name}:/incant ...",
             )
 
             # Wait for the instance to become ready if specified in config, or
             # if we want to perform provisioning, or if the instance is a VM (for some
             # reason the VM needs to be running before creating the shared folder)
             if (
-                instance_data.get("wait", False)
-                or instance_data.get("provision", False)
-                or instance_data.get("vm", False)
+                instance_config.wait
+                or instance_config.provision
+                or instance_config.vm
             ):
                 self.reporter.info(
-                    f"Waiting for {instance_name} to become ready...",
+                    f"Waiting for {instance_config.name} to become ready...",
                 )
                 while True:
-                    if self.incus.is_instance_ready(instance_name, True):
+                    if self.incus.is_instance_ready(instance_config.name, True):
                         self.reporter.success(
-                            f"Instance {instance_name} is ready.",
+                            f"Instance {instance_config.name} is ready.",
                         )
                         break
                     time.sleep(1)
 
-            if instance_data.get("shared_folder", True):
-                self.incus.create_shared_folder(instance_name)
+            if instance_config.shared_folder:
+                self.incus.create_shared_folder(instance_config.name)
 
-            if instance_data.get("provision", False):
+            if instance_config.provision:
                 # Automatically run provisioning after instance creation
-                self.provision(instance_name)
+                self.provision(instance_config.name)
 
     def provision(self, name: str = None):
-        instances_to_provision = self._get_instances(name)
+        instances_to_provision = self._get_instance_configs(name)
 
-        for instance_name, instance_data in instances_to_provision.items():
-            provisions = instance_data.get("provision", [])
-            self.provisioner.provision(instance_name, provisions)
+        for instance_name, instance_config in instances_to_provision.items():
+            self.provisioner.provision(instance_name, instance_config.provision)
 
     def destroy(self, name=None):
-        instances_to_destroy = self._get_instances(name)
+        instances_to_destroy = self._get_instance_configs(name)
 
         for instance_name, _instance_data in instances_to_destroy.items():
             # Check if the instance exists before deleting
@@ -134,16 +112,12 @@ class Incant:
 
         When no_error is True and no configuration is found, do nothing and return successfully.
         """
-        if self.config_manager.config_data is None:
-            config = self.config_manager.load_config()
-            if config is None:
-                if no_error:
-                    return
-                raise ConfigurationError("No configuration loaded.")
-            self.config_manager.config_data = config
-        # Validate before listing
-        self.config_manager.validate_config()
-        for instance_name in self.config_manager.config_data["instances"]:
+        if not self.config_manager.instance_configs:
+            if no_error:
+                return
+            raise ConfigurationError("No instances found in config.")
+
+        for instance_name in self.config_manager.instance_configs:
             self.reporter.echo(f"{instance_name}")
 
     def incant_init(self):
@@ -201,13 +175,13 @@ class Incant:
     def shell(self, name: str = None):
         instance_name = name
         if not instance_name:
-            instance_names = list(self.config_manager.config_data["instances"].keys())
+            instance_names = list(self.config_manager.instance_configs.keys())
             if len(instance_names) == 1:
                 instance_name = instance_names[0]
             else:
                 raise InstanceError("Multiple instances found. Please specify an instance name")
 
-        if instance_name not in self.config_manager.config_data["instances"]:
+        if instance_name not in self.config_manager.instance_configs:
             raise InstanceError(f"Instance '{instance_name}' not found in config")
 
         self.incus.shell(instance_name)

@@ -11,6 +11,7 @@ from mako.template import Template
 
 from .exceptions import ConfigurationError
 from .reporter import Reporter
+from .types import InstanceConfig, InstanceDict
 
 
 class ConfigManager:
@@ -25,13 +26,35 @@ class ConfigManager:
         self.config_path = config_path
         self.verbose = verbose
         self.no_config = no_config
-        self.config_data = None
+        self._config_data = None
+        self.instance_configs: InstanceDict = {}
         if not self.no_config:
             try:
-                self.config_data = self.load_config()
-            except ConfigurationError as e:
+                self._config_data = self.load_config()
+                if self._config_data:
+                    self.instance_configs = self.get_instance_configs()
+                    self.validate_config()
+            except (ConfigurationError, TypeError) as e:
                 # Re-raise to be caught by the CLI or tests
-                raise e
+                raise ConfigurationError(e) from e
+
+    def get_instance_configs(self) -> InstanceDict:
+        """Parses the raw config data and returns a dictionary of InstanceConfig objects."""
+        instance_configs = {}
+        instances_data = self._config_data.get("instances", {})
+        for instance_name, instance_data in instances_data.items():
+            if instance_data is None:
+                instance_data = {}
+            instance_data_copy = instance_data.copy()
+            instance_data_copy["name"] = instance_name
+            if "type" in instance_data_copy:
+                instance_data_copy["instance_type"] = instance_data_copy.pop("type")
+            if "pre-launch" in instance_data_copy:
+                instance_data_copy["pre_launch_cmds"] = instance_data_copy.pop(
+                    "pre-launch"
+                )
+            instance_configs[instance_name] = InstanceConfig(**instance_data_copy)
+        return instance_configs
 
     def find_config_file(self):
         search_paths = []
@@ -94,10 +117,10 @@ class ConfigManager:
             raise ConfigurationError(f"Error parsing YAML file {config_file}: {e}") from e
 
     def dump_config(self):
-        if not self.config_data:
+        if not self._config_data:
             raise ConfigurationError("No configuration to dump")
         try:
-            yaml.dump(self.config_data, sys.stdout, default_flow_style=False, sort_keys=False)
+            yaml.dump(self._config_data, sys.stdout, default_flow_style=False, sort_keys=False)
         except Exception as e:  # pylint: disable=broad-exception-caught
             raise ConfigurationError(f"Error dumping configuration: {e}") from e
 
@@ -205,9 +228,9 @@ class ConfigManager:
                 "or dictionary value."
             )
 
-    def _validate_provisioning(self, instance, name):
-        if "provision" in instance and instance["provision"] is not None:
-            provisions = instance["provision"]
+    def _validate_provisioning(self, instance: InstanceConfig, name: str):
+        if instance.provision is not None:
+            provisions = instance.provision
             if isinstance(provisions, list):
                 for step_idx, step in enumerate(provisions):
                     self._validate_provision_step(step, step_idx, name)
@@ -216,9 +239,9 @@ class ConfigManager:
                     f"Provisioning for instance '{name}' must be a string or a list of steps."
                 )
 
-    def _validate_pre_launch(self, instance, name):
-        if "pre-launch" in instance and instance["pre-launch"] is not None:
-            pre_launch_cmds = instance["pre-launch"]
+    def _validate_pre_launch(self, instance: InstanceConfig, name: str):
+        if instance.pre_launch_cmds is not None:
+            pre_launch_cmds = instance.pre_launch_cmds
             if not isinstance(pre_launch_cmds, list):
                 raise ConfigurationError(
                     f"Pre-launch commands for instance '{name}' must be a list of strings."
@@ -230,36 +253,13 @@ class ConfigManager:
                     )
 
     def validate_config(self):
-        if not self.config_data:
-            raise ConfigurationError("No configuration loaded.")
-        if "instances" not in self.config_data:
+        if not self.instance_configs:
             raise ConfigurationError("No instances found in config")
 
-        accepted_fields = {
-            "image",
-            "vm",
-            "profiles",
-            "config",
-            "devices",
-            "network",
-            "type",
-            "wait",
-            "provision",
-            "pre-launch",
-            "shared_folder",
-        }
-
-        # The top-level keys of the instances dictionary are the names
-        for name, instance in self.config_data["instances"].items():
-            if instance is None:
-                raise ConfigurationError(f"Instance '{name}' cannot be empty.")
-            if "image" not in instance:
+        for name, instance_config in self.instance_configs.items():
+            if instance_config.image is None:
                 raise ConfigurationError(f"Instance '{name}' is missing required 'image' field.")
 
-            for field in instance:
-                if field not in accepted_fields:
-                    raise ConfigurationError(f"Unknown field '{field}' in instance '{name}'.")
-
             # Validate 'provision' field
-            self._validate_provisioning(instance, name)
-            self._validate_pre_launch(instance, name)
+            self._validate_provisioning(instance_config, name)
+            self._validate_pre_launch(instance_config, name)

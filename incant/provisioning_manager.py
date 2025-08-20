@@ -12,7 +12,7 @@ from typing import Union
 from .exceptions import IncusCommandError
 from .incus_cli import IncusCLI
 from .reporter import Reporter
-from .types import ProvisionSteps
+from .types import FilePushConfig, ProvisionSteps
 
 
 class ProvisionManager:
@@ -33,7 +33,8 @@ class ProvisionManager:
             elif isinstance(provisions, list):
                 for step in provisions:
                     if isinstance(step, dict) and "copy" in step:
-                        self.incus.file_push(instance_name, **step["copy"])
+                        step["copy"]["instance_name"] = instance_name
+                        self.incus.file_push(FilePushConfig(**step["copy"]))
                     elif isinstance(step, dict) and "ssh" in step:
                         self.ssh_setup(instance_name, step["ssh"])
                     else:
@@ -141,12 +142,14 @@ class ProvisionManager:
                     temp_file.write(authorized_keys_content)
 
                 self.incus.file_push(
-                    name,
-                    temp_path,
-                    "/root/.ssh/authorized_keys",
-                    uid=0,
-                    gid=0,
-                    quiet=True,
+                    FilePushConfig(
+                        instance_name=name,
+                        source=temp_path,
+                        target="/root/.ssh/authorized_keys",
+                        uid=0,
+                        gid=0,
+                        quiet=True,
+                    )
                 )
             finally:
                 os.remove(temp_path)
