@@ -25,6 +25,11 @@ incant = "incant.cli:cli"
 [tool.poetry.group.dev.dependencies]
 pylint = "^3.3.4"
 pytest-cov = "^6.2.1"
+mypy = "^1.17.1"
+bandit = "^1.8.6"
+isort = "^6.0.1"
+radon = "^6.0.1"
+ruff = "^0.12.9"
 
 [tool.black]
 line-length = 100
@@ -35,3 +40,11 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 addopts = "--cov=incant --cov-fail-under=15"
+
+[tool.ruff]
+# Match line length with black for compatibility.
+line-length = 100
+
+[tool.ruff.lint]
+# Enable a selection of rules from flake8 (E, F, W), isort (I), bugbear (B), and pylint (PL)
+select = ["E", "F", "W", "I", "B", "PL"]
