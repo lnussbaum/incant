@@ -1,0 +1,21 @@
+name: Radon
+
+on: [push, pull_request]
+
+jobs:
+  complexity-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.11
+    - name: Install dependencies
+      run: |
+        set -x
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install --no-interaction --no-root
+    - name: Run Radon
+      run: poetry run radon cc incant/

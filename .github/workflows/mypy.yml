@@ -1,0 +1,21 @@
+name: MyPy
+
+on: [push, pull_request]
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.11
+    - name: Install dependencies
+      run: |
+        set -x
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install --no-interaction --no-root
+    - name: Run MyPy
+      run: poetry run mypy incant
