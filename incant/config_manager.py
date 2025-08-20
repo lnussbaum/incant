@@ -45,6 +45,12 @@ class ConfigManager:
         for instance_name, instance_data in instances_data.items():
             if instance_data is None:
                 instance_data = {}
+
+            if "image" not in instance_data:
+                raise ConfigurationError(
+                    f"Instance '{instance_name}' is missing required 'image' field."
+                )
+
             instance_data_copy = instance_data.copy()
             instance_data_copy["name"] = instance_name
             if "type" in instance_data_copy:
@@ -259,8 +265,7 @@ class ConfigManager:
             raise ConfigurationError("No instances found in config")
 
         for name, instance_config in self.instance_configs.items():
-            if instance_config.image is None:
-                raise ConfigurationError(f"Instance '{name}' is missing required 'image' field.")
+            
 
             # Validate 'provision' field
             self._validate_provisioning(instance_config, name)
