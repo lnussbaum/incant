@@ -57,9 +57,14 @@ class ConfigManager:
         return instance_configs
 
     def find_config_file(self):
-        search_paths = []
         if self.config_path:
-            search_paths.append(Path(self.config_path))
+            explicit_path = Path(self.config_path)
+            if explicit_path.is_file():
+                if self.verbose:
+                    self.reporter.success(f"Config found at: {explicit_path}")
+                return explicit_path
+            else:
+                return None
 
         base_names = ["incant", ".incant"]
         extensions = [".yaml", ".yaml.j2", ".yaml.mako"]
@@ -67,20 +72,17 @@ class ConfigManager:
 
         for name in base_names:
             for ext in extensions:
-                search_paths.append(cwd / f"{name}{ext}")
-
-        for path in search_paths:
-            if path.is_file():
-                if self.verbose:
-                    self.reporter.success(f"Config found at: {path}")
-                return path
-        # If no config is found, return None
+                path = cwd / f"{name}{ext}"
+                if path.is_file():
+                    if self.verbose:
+                        self.reporter.success(f"Config found at: {path}")
+                    return path
         return None
 
     def load_config(self):
         config_file = self.find_config_file()
         if config_file is None:
-            return None
+            raise ConfigurationError("Config file not found")
 
         try:
             # Read the config file content
