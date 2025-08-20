@@ -201,7 +201,8 @@ class ConfigManager:
     def _validate_ssh_step(self, value, name):
         if not isinstance(value, (bool, dict)):
             raise ConfigurationError(
-                f"Provisioning 'ssh' step in instance '{name}' must have a boolean or dictionary value."
+                f"Provisioning 'ssh' step in instance '{name}' must have a boolean "
+                "or dictionary value."
             )
 
     def _validate_provisioning(self, instance, name):

@@ -8,8 +8,9 @@ from .config_manager import ConfigManager
 from .exceptions import ConfigurationError, IncantError, InstanceError
 from .provisioning_manager import ProvisionManager
 from .reporter import Reporter
-from .types import InstanceDict  # pylint: disable=unused-import # noqa: F401
-from .types import ProvisionSteps
+from .types import (
+    InstanceDict,  # pylint: disable=unused-import # noqa: F401
+    )
 
 
 class Incant:
@@ -43,7 +44,8 @@ class Incant:
     def up(self, name=None):
         instances_to_process = self._get_instances(name)
 
-        # Step 1 -- Create instances (we do this for all instances so that they can boot in parallel)
+        # Step 1 -- Create instances (we do this for all instances so that they can
+        # boot in parallel)
         for instance_name, instance_data in instances_to_process.items():
             # Process the instance
             image = instance_data["image"]
@@ -172,7 +174,8 @@ class Incant:
                   apt-get update
                   apt-get -y install curl ruby
                 # then, a script. the path can be relative to the current dir,
-                # as incant will 'cd' to /incant, so the script will be available inside the instance
+                # as incant will 'cd' to /incant, so the script will be available
+                # inside the instance
                 - examples/provision/web_server.rb
                 - ssh: true # configure an ssh server and provide access
                 # - ssh: # same with more configuration
