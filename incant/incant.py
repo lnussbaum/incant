@@ -8,9 +8,7 @@ from .config_manager import ConfigManager
 from .exceptions import ConfigurationError, IncantError, InstanceError
 from .provisioning_manager import ProvisionManager
 from .reporter import Reporter
-from .types import (
-    InstanceDict,  # pylint: disable=unused-import # noqa: F401
-    )
+from .types import InstanceDict  # pylint: disable=unused-import # noqa: F401
 
 
 class Incant:
