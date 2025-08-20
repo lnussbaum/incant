@@ -9,6 +9,8 @@ from jinja2 import exceptions as jinja_exceptions
 from mako import exceptions as mako_exceptions
 from mako.template import Template
 
+from typing import Any, Dict, Optional
+
 from .exceptions import ConfigurationError
 from .reporter import Reporter
 from .types import InstanceConfig, InstanceDict
@@ -18,7 +20,7 @@ class ConfigManager:
     def __init__(
         self,
         reporter: Reporter,
-        config_path: str = None,
+        config_path: Optional[str] = None,
         verbose: bool = False,
         no_config: bool = False,
     ):
@@ -26,7 +28,7 @@ class ConfigManager:
         self.config_path = config_path
         self.verbose = verbose
         self.no_config = no_config
-        self._config_data = None
+        self._config_data: Optional[Dict[str, Any]] = None
         self.instance_configs: InstanceDict = {}
         if not self.no_config:
             try:
@@ -41,6 +43,8 @@ class ConfigManager:
     def get_instance_configs(self) -> InstanceDict:
         """Parses the raw config data and returns a dictionary of InstanceConfig objects."""
         instance_configs = {}
+        if not self._config_data:
+            return {}
         instances_data = self._config_data.get("instances", {})
         for instance_name, instance_data_from_loop in instances_data.items():
             current_instance_data = instance_data_from_loop if instance_data_from_loop is not None else {}

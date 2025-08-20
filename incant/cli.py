@@ -1,4 +1,5 @@
 import sys
+from typing import Optional
 
 import click
 
@@ -39,7 +40,7 @@ def _handle_error(error: Exception, reporter: Reporter) -> None:
 @cli.command()
 @click.argument("name", required=False)
 @click.pass_context
-def up(ctx, name: str):
+def up(ctx, name: Optional[str]):
     """Start and provision an instance or all instances if no name is provided."""
     try:
         Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).up(name)
@@ -50,7 +51,7 @@ def up(ctx, name: str):
 @cli.command()
 @click.argument("name", required=False)
 @click.pass_context
-def provision(ctx, name: str = None):
+def provision(ctx, name: Optional[str] = None):
     """Provision an instance or all instances if no name is provided."""
     try:
         Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).provision(name)
@@ -61,7 +62,7 @@ def provision(ctx, name: str = None):
 @cli.command()
 @click.argument("name", required=False)
 @click.pass_context
-def shell(ctx, name: str):
+def shell(ctx, name: Optional[str]):
     """Open a shell into an instance. If no name is given and there is only one instance, use it."""
     try:
         Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).shell(name)
@@ -72,7 +73,7 @@ def shell(ctx, name: str):
 @cli.command()
 @click.argument("name", required=False)
 @click.pass_context
-def destroy(ctx, name: str):
+def destroy(ctx, name: Optional[str]):
     """Destroy an instance or all instances if no name is provided."""
     try:
         Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).destroy(name)

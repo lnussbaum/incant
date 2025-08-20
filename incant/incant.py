@@ -1,6 +1,7 @@
 import os
 import textwrap
 import time
+from typing import Optional
 
 from incant.incus_cli import IncusCLI
 
@@ -27,7 +28,7 @@ class Incant:
         self.incus = IncusCLI(self.reporter)
         self.provisioner = ProvisionManager(self.incus, self.reporter)
 
-    def _get_instance_configs(self, name: str = None) -> InstanceDict:
+    def _get_instance_configs(self, name: Optional[str] = None) -> InstanceDict:
         """Helper to get instance configs, either all or a specific one."""
         instance_configs = self.config_manager.instance_configs
         if name:
@@ -85,11 +86,12 @@ class Incant:
                 # Automatically run provisioning after instance creation
                 self.provision(instance_config.name)
 
-    def provision(self, name: str = None):
+    def provision(self, name: Optional[str] = None):
         instances_to_provision = self._get_instance_configs(name)
 
         for instance_name, instance_config in instances_to_provision.items():
-            self.provisioner.provision(instance_name, instance_config.provision)
+            if instance_config.provision:
+                self.provisioner.provision(instance_name, instance_config.provision)
 
     def destroy(self, name=None):
         instances_to_destroy = self._get_instance_configs(name)
@@ -168,7 +170,7 @@ class Incant:
 
         print(f"Example configuration written to {config_path}")
 
-    def shell(self, name: str = None):
+    def shell(self, name: Optional[str] = None):
         instance_name = name
         if not instance_name:
             instance_names = list(self.config_manager.instance_configs.keys())

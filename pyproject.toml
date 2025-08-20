@@ -32,6 +32,7 @@ radon = "^6.0.1"
 ruff = "^0.12.9"
 flake8 = "^7.1.0"
 flake8-pyproject = "^1.2.3"
+types-pyyaml = "^6.0.12.20250809"
 
 [tool.black]
 line-length = 110
@@ -62,3 +63,6 @@ max-branches = 13 # From .pylintrc
 
 [tool.pylint.format]
 max-line-length = 110
+
+[tool.mypy]
+ignore_missing_imports = true

@@ -6,7 +6,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from .exceptions import IncusCommandError, InstanceError
 from .reporter import Reporter
@@ -56,7 +56,7 @@ class IncusCLI:
                 stderr=e.stderr,
             ) from e
 
-    def exec(self, name: str, command: List[str], cwd: str = None, **kwargs) -> str:
+    def exec(self, name: str, command: List[str], cwd: Optional[str] = None, **kwargs) -> str:
         cmd = ["exec"]
         if cwd:
             cmd.extend(["--cwd", cwd])
@@ -144,7 +144,7 @@ class IncusCLI:
                         ["grep", "-wq", "/incant", "/proc/mounts"],
                         capture_output=False,
                     )
-                    return True  # Success!
+                    return  # Success!
                 except IncusCommandError:
                     if attempt < self.MAX_RETRY_ATTEMPTS:
                         time.sleep(1)
@@ -190,7 +190,7 @@ class IncusCLI:
             self.exec(name, ["true"], quiet=True)
             return True
         except IncusCommandError as e:
-            if e.stderr.strip() == "Error: VM agent isn't currently running":
+            if e.stderr and e.stderr.strip() == "Error: VM agent isn't currently running":
                 return False
             raise
 

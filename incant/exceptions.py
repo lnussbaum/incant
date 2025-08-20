@@ -23,10 +23,13 @@ class ProvisioningError(IncantError):
     """Raised when there's an issue with provisioning operations."""
 
 
+from typing import Optional
+
+
 class IncusCommandError(IncantError):
     """Raised when an Incus command fails."""
 
-    def __init__(self, message: str, command: str = None, stderr: str = None):
+    def __init__(self, message: str, command: Optional[str] = None, stderr: Optional[str] = None):
         super().__init__(message)
         self.command = command
         self.stderr = stderr
