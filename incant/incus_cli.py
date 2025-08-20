@@ -1,15 +1,12 @@
-import subprocess
 import json
-from typing import List, Dict, Optional
-import sys
-from pathlib import Path
-import tempfile
 import os
 import shlex
-
-
+import subprocess
+import sys
+import tempfile
 import time
-
+from pathlib import Path
+from typing import Dict, List, Optional
 
 from .exceptions import IncusCommandError, InstanceError
 from .reporter import Reporter

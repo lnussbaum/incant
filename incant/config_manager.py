@@ -1,13 +1,13 @@
 import os
-import sys
 import re
+import sys
 from pathlib import Path
 
 import yaml
-from jinja2 import Environment, FileSystemLoader, exceptions as jinja_exceptions
-from mako.template import Template
+from jinja2 import Environment, FileSystemLoader
+from jinja2 import exceptions as jinja_exceptions
 from mako import exceptions as mako_exceptions
-
+from mako.template import Template
 
 from .exceptions import ConfigurationError
 from .reporter import Reporter

@@ -1,6 +1,9 @@
 import sys
+
 import click
+
 from incant import Incant
+
 from .exceptions import IncantError
 from .reporter import Reporter
 

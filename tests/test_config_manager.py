@@ -1,5 +1,6 @@
 import sys
 from io import StringIO
+
 import pytest
 import yaml
 

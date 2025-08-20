@@ -1,10 +1,12 @@
 import os
-import time
 import textwrap
+import time
+
 from incant.incus_cli import IncusCLI
-from .provisioning_manager import ProvisionManager
+
 from .config_manager import ConfigManager
-from .exceptions import IncantError, InstanceError, ConfigurationError
+from .exceptions import ConfigurationError, IncantError, InstanceError
+from .provisioning_manager import ProvisionManager
 from .reporter import Reporter
 from .types import InstanceDict, ProvisionSteps  # pylint: disable=unused-import # noqa: F401
 
