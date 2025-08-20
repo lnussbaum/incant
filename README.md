@@ -34,12 +34,40 @@ Incant looks for a configuration file named `incant.yaml`, `incant.yaml.j2`, or 
 
 ```yaml
 instances:
-  my-instance:
-    image: images:debian/12
-    vm: false # use a container, not a KVM virtual machine
-    provision:
-      - echo "Hello, World!"
-      - apt-get update && apt-get install -y curl
+  basic-container:
+    image: images:ubuntu/24.04
+    devices:
+      root:
+        size: 1GiB
+    wait: true # wait for instance to be ready (incus agent running)
+    shared_folder: false # disable shared folder (/incant) setup (default: enabled)
+    config: # any incus config options
+      limits.processes: 100
+  basic-vm:
+    image: images:ubuntu/24.04
+    vm: true
+    type: c1-m1 # 1 CPU, 1GB RAM
+  provisioned:
+    image: images:debian/13
+    provision: # a list of provisioning steps
+      - | # first, an inlined script
+        #!/bin/bash
+        set -xe
+        apt-get update
+        apt-get -y install curl ruby
+      # then, a script. the path can be relative to the current dir,
+      # as incant will 'cd' to /incant, so the script will be available inside the instance
+      - examples/provision/web_server.rb
+      - ssh: true # configure an ssh server and provide access
+      # - ssh: # same with more configuration
+      #    clean_known_hosts: true (that's the default)
+      #    # authorized_keys: path to file (default: concatenate id_*.pub)
+      - copy: # copy a file using 'incus file push'
+          source: ./README.md
+          target: /tmp/README.md
+          mode: "0644"
+          uid: 0
+          gid: 0
 ```
 
 You can also ask Incant to create an example in the current directory:
