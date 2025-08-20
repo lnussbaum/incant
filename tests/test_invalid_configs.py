@@ -1,4 +1,3 @@
-
 import pytest
 import yaml
 
@@ -94,14 +93,12 @@ def test_copy_step_missing_fields(tmp_path, mock_reporter):
         tmp_path,
         mock_reporter,
         config,
-        "is missing required field\(s\): target",
+        "is missing required field\\(s\\): target",
     )
 
 
 def test_copy_step_invalid_field_types(tmp_path, mock_reporter):
-    config = {
-        "instances": {"test": {"image": "ubuntu", "provision": [{"copy": {"source": 1, "target": 2}}]}}
-    }
+    config = {"instances": {"test": {"image": "ubuntu", "provision": [{"copy": {"source": 1, "target": 2}}]}}}
     run_test_with_config(
         tmp_path,
         mock_reporter,

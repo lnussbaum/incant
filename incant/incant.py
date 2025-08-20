@@ -54,9 +54,9 @@ class Incant:
         for instance_config in instance_configs.values():
             # Wait for the agent to become ready before sharing the current directory
             while True:
-                if self.incus.is_agent_running(
+                if self.incus.is_agent_running(instance_config.name) and self.incus.is_agent_usable(
                     instance_config.name
-                ) and self.incus.is_agent_usable(instance_config.name):
+                ):
                     break
                 time.sleep(0.3)
             self.reporter.success(
@@ -66,11 +66,7 @@ class Incant:
             # Wait for the instance to become ready if specified in config, or
             # if we want to perform provisioning, or if the instance is a VM (for some
             # reason the VM needs to be running before creating the shared folder)
-            if (
-                instance_config.wait
-                or instance_config.provision
-                or instance_config.vm
-            ):
+            if instance_config.wait or instance_config.provision or instance_config.vm:
                 self.reporter.info(
                     f"Waiting for {instance_config.name} to become ready...",
                 )

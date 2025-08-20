@@ -103,9 +103,7 @@ class IncusCLI:
         self._run_command(command)
 
         if instance_config.pre_launch_cmds:
-            self.reporter.info(
-                f"Executing pre-launch commands for {instance_config.name}..."
-            )
+            self.reporter.info(f"Executing pre-launch commands for {instance_config.name}...")
             for cmd in instance_config.pre_launch_cmds:
                 self._run_command(shlex.split(cmd))
             self.reporter.info(f"Starting {instance_config.name}...")

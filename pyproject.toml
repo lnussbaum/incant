@@ -31,9 +31,10 @@ isort = "^6.0.1"
 radon = "^6.0.1"
 ruff = "^0.12.9"
 flake8 = "^7.1.0"
+flake8-pyproject = "^1.2.3"
 
 [tool.black]
-line-length = 100
+line-length = 110
 
 [build-system]
 requires = ["poetry-core"]
@@ -44,7 +45,7 @@ addopts = "--cov=incant --cov-fail-under=15"
 
 [tool.ruff]
 # Match line length with black for compatibility.
-line-length = 100
+line-length = 110
 
 [tool.ruff.lint]
 # Enable a selection of rules from flake8 (E, F, W), isort (I), bugbear (B), and pylint (PL)
@@ -60,4 +61,4 @@ disable = "missing-docstring" # From .pylintrc
 max-branches = 13 # From .pylintrc
 
 [tool.pylint.format]
-max-line-length = 100
+max-line-length = 110

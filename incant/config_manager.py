@@ -42,23 +42,20 @@ class ConfigManager:
         """Parses the raw config data and returns a dictionary of InstanceConfig objects."""
         instance_configs = {}
         instances_data = self._config_data.get("instances", {})
-        for instance_name, instance_data in instances_data.items():
-            if instance_data is None:
-                instance_data = {}
+        for instance_name, instance_data_from_loop in instances_data.items():
+            current_instance_data = instance_data_from_loop if instance_data_from_loop is not None else {}
 
-            if "image" not in instance_data:
+            if "image" not in current_instance_data:
                 raise ConfigurationError(
                     f"Instance '{instance_name}' is missing required 'image' field."
                 )
 
-            instance_data_copy = instance_data.copy()
+            instance_data_copy = current_instance_data.copy()
             instance_data_copy["name"] = instance_name
             if "type" in instance_data_copy:
                 instance_data_copy["instance_type"] = instance_data_copy.pop("type")
             if "pre-launch" in instance_data_copy:
-                instance_data_copy["pre_launch_cmds"] = instance_data_copy.pop(
-                    "pre-launch"
-                )
+                instance_data_copy["pre_launch_cmds"] = instance_data_copy.pop("pre-launch")
             instance_configs[instance_name] = InstanceConfig(**instance_data_copy)
         return instance_configs
 
@@ -138,8 +135,7 @@ class ConfigManager:
 
         if not isinstance(step, dict):
             raise ConfigurationError(
-                f"Provisioning step {step_idx} in instance '{name}' "
-                "must be a string or a dictionary."
+                f"Provisioning step {step_idx} in instance '{name}' " "must be a string or a dictionary."
             )
 
         if len(step) != 1:
@@ -178,25 +174,16 @@ class ConfigManager:
             )
         if not isinstance(value["source"], str) or not isinstance(value["target"], str):
             raise ConfigurationError(
-                (
-                    f"Provisioning 'copy' step in instance '{name}' must have string "
-                    "'source' and 'target'."
-                )
+                (f"Provisioning 'copy' step in instance '{name}' must have string " "'source' and 'target'.")
             )
 
         if "uid" in value and not isinstance(value["uid"], int):
             raise ConfigurationError(
-                (
-                    f"Provisioning 'copy' step in instance '{name}' has invalid 'uid': "
-                    "must be an integer."
-                )
+                (f"Provisioning 'copy' step in instance '{name}' has invalid 'uid': " "must be an integer.")
             )
         if "gid" in value and not isinstance(value["gid"], int):
             raise ConfigurationError(
-                (
-                    f"Provisioning 'copy' step in instance '{name}' has invalid 'gid': "
-                    "must be an integer."
-                )
+                (f"Provisioning 'copy' step in instance '{name}' has invalid 'gid': " "must be an integer.")
             )
         if "mode" in value:
             mode_val = value["mode"]
@@ -232,8 +219,7 @@ class ConfigManager:
     def _validate_ssh_step(self, value, name):
         if not isinstance(value, (bool, dict)):
             raise ConfigurationError(
-                f"Provisioning 'ssh' step in instance '{name}' must have a boolean "
-                "or dictionary value."
+                f"Provisioning 'ssh' step in instance '{name}' must have a boolean " "or dictionary value."
             )
 
     def _validate_provisioning(self, instance: InstanceConfig, name: str):
@@ -265,7 +251,6 @@ class ConfigManager:
             raise ConfigurationError("No instances found in config")
 
         for name, instance_config in self.instance_configs.items():
-            
 
             # Validate 'provision' field
             self._validate_provisioning(instance_config, name)

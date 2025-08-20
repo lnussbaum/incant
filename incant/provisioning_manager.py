@@ -104,9 +104,7 @@ class ProvisionManager:
 
         # Determine the content for authorized_keys
         authorized_keys_content = ""
-        source_path_str = (
-            ssh_config.get("authorized_keys") if isinstance(ssh_config, dict) else None
-        )
+        source_path_str = ssh_config.get("authorized_keys") if isinstance(ssh_config, dict) else None
 
         if source_path_str:
             source_path = Path(source_path_str).expanduser()
