@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # This is the Bash completion script for Incant
 
 # _incant_completions: Provides autocompletion for Incant commands
