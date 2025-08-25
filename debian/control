@@ -19,9 +19,14 @@ Standards-Version: 4.6.2
 Homepage: https://github.com/lnussbaum/incant
 Vcs-Browser: https://salsa.debian.org/debian/incant
 Vcs-Git: https://salsa.debian.org/debian/incant.git
+Rules-Requires-Root: no
 
 Package: incant
 Architecture: all
 Depends: ${misc:Depends},
          ${python3:Depends}
-Description: Incant
+Description: Incus frontend for declarative development environments
+ Incant is a frontend for Incus that provides a declarative way to define and
+ manage development environments. It simplifies the creation, configuration,
+ and provisioning of Incus instances using YAML-based configuration files. It
+ is inspired by Vagrant and intended as an Incus-based replacement.
