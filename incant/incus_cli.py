@@ -42,11 +42,10 @@ class IncusCLI:
             )
             return result.stdout
         except subprocess.CalledProcessError as e:
-            error_message = (
-                f"Failed: {e.stderr.strip()}"
-                if capture_output and e.stderr is not None
-                else f"Command {' '.join(full_command)} failed"
-            )
+            error_message = f"Command {' '.join(full_command)} failed"
+            if capture_output and e.stderr and e.stderr.strip():
+                error_message = f"Failed: {e.stderr.strip()}"
+
             if allow_failure:
                 self.reporter.error(error_message)
                 return e.stdout
@@ -196,10 +195,9 @@ class IncusCLI:
 
     def is_instance_booted(self, name: str) -> bool:
         try:
-            self.exec(name, ["which", "systemctl"], quiet=True)
+            self.exec(name, ["sh", "-c", "command -v systemctl"], quiet=True)
         except Exception as exc:
-            # no systemctl in instance. We assume it booted
-            # return True
+            # If systemctl is not found, we cannot determine the boot status.
             raise RuntimeError("systemctl not found in instance") from exc
         systemctl = self.exec(
             name,
