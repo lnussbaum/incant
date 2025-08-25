@@ -86,16 +86,45 @@ class ProvisionManager:
             ssh_config = {"clean_known_hosts": True}
 
         self.reporter.success(f"Installing SSH server in {name}...")
-        try:
-            self.incus.exec(
-                name,
-                ["sh", "-c", "apt-get update && apt-get -y install ssh"],
-                capture_output=False,
-            )
-        except IncusCommandError:
+
+        package_managers = [
+            {
+                "check_cmd": "command -v apt-get",
+                "install_cmds": ["apt-get update && apt-get -y install ssh"],
+            },
+            {
+                "check_cmd": "command -v dnf",
+                "install_cmds": [
+                    "dnf -y install openssh-server",
+                    "systemctl enable sshd",
+                    "systemctl start sshd",
+                ],
+            },
+            {
+                "check_cmd": "command -v pacman",
+                "install_cmds": [
+                    "pacman -Syu --noconfirm openssh",
+                    "systemctl enable sshd",
+                    "systemctl start sshd",
+                ],
+            },
+        ]
+
+        installed = False
+        for pm in package_managers:
+            try:
+                self.incus.exec(name, ["sh", "-c", pm["check_cmd"]], capture_output=True)
+                for cmd in pm["install_cmds"]:
+                    self.incus.exec(name, ["sh", "-c", cmd], capture_output=False)
+                installed = True
+                break  # Exit loop on success
+            except IncusCommandError:
+                continue  # Try next package manager
+
+        if not installed:
             self.reporter.error(
                 f"Failed to install SSH server in {name}. "
-                "Currently, only apt-based systems are supported for ssh-setup.",
+                "No supported package manager (apt-get, dnf, pacman) found.",
             )
             return
 
