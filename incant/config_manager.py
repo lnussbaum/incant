@@ -147,10 +147,10 @@ class ConfigManager:
 
         key, value = list(step.items())[0]
 
-        if key not in ["copy", "ssh"]:
+        if key not in ["copy", "ssh", "llmnr"]:
             raise ConfigurationError(
                 f"Unknown provisioning step type '{key}' in instance '{name}'. "
-                "Accepted types are 'copy' or 'ssh'."
+                "Accepted types are 'copy', 'ssh', or 'llmnr'."
             )
 
         if key == "copy":
@@ -162,6 +162,9 @@ class ConfigManager:
 
         if key == "ssh":
             self._validate_ssh_step(value, name)
+
+        if key == "llmnr":
+            self._validate_llmnr_step(value, name)
 
     def _validate_copy_step(self, value, name):
         required_fields = ["source", "target"]
@@ -221,6 +224,12 @@ class ConfigManager:
         if not isinstance(value, (bool, dict)):
             raise ConfigurationError(
                 f"Provisioning 'ssh' step in instance '{name}' must have a boolean " "or dictionary value."
+            )
+
+    def _validate_llmnr_step(self, value, name):
+        if not isinstance(value, bool):
+            raise ConfigurationError(
+                f"Provisioning 'llmnr' step in instance '{name}' must have a boolean value."
             )
 
     def _validate_provisioning(self, instance: InstanceConfig, name: str):

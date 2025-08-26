@@ -8,7 +8,7 @@ Incant is a frontend for [Incus](https://linuxcontainers.org/incus/) that provid
 
 - **Declarative Configuration**: Define your development environments using simple YAML files.
 - **Shared Folder Support**: Mount the current working directory into the instance.
-- **Provisioning Support**: Declare and run provisioning scripts automatically, copy files to the instance, and set up an SSH server automatically.
+- **Provisioning Support**: Declare and run provisioning scripts automatically, copy files to the instance, set up an SSH server automatically, and configure an LLMNR daemon.
 
 ## Installation
 
@@ -62,6 +62,7 @@ instances:
       # - ssh: # same with more configuration
       #    clean_known_hosts: true (that's the default)
       #    # authorized_keys: path to file (default: concatenate id_*.pub)
+      - llmnr: true # configure and start an LLMNR daemon
       - copy: # copy a file using 'incus file push'
           source: ./README.md
           target: /tmp/README.md
