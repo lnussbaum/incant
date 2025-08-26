@@ -3,6 +3,6 @@ from incant.reporter import Reporter
 
 
 class TestIncusCLI:
-    def test_contructor(self):
+    def test_constructor(self):
         reporter = Reporter()
         IncusCLI(reporter=reporter)

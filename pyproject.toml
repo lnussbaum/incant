@@ -33,6 +33,7 @@ ruff = "^0.12.9"
 flake8 = "^7.1.0"
 flake8-pyproject = "^1.2.3"
 types-pyyaml = "^6.0.12.20250809"
+typos = "^1.35.5"
 
 [tool.black]
 line-length = 110
