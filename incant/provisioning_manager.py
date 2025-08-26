@@ -7,12 +7,17 @@ import os
 import subprocess  # nosec B404
 import tempfile
 from pathlib import Path
-from typing import Union
+from typing import TypedDict, Union
 
 from .exceptions import IncusCommandError
 from .incus_cli import IncusCLI
 from .reporter import Reporter
 from .types import FilePushConfig, ProvisionSteps
+
+
+class PackageManager(TypedDict):
+    check_cmd: str
+    install_cmds: list[str]
 
 
 class ProvisionManager:
@@ -80,14 +85,9 @@ class ProvisionManager:
                 "ssh command not found, cannot add new host key to known_hosts.",
             )
 
-    def ssh_setup(self, name: str, ssh_config: Union[dict, bool]) -> None:
-        """Install SSH server and copy authorized_keys."""
-        if isinstance(ssh_config, bool):
-            ssh_config = {"clean_known_hosts": True}
-
-        self.reporter.success(f"Installing SSH server in {name}...")
-
-        package_managers = [
+    def _install_ssh_server(self, name: str) -> bool:
+        """Installs SSH server in the instance."""
+        package_managers: list[PackageManager] = [
             {
                 "check_cmd": "command -v apt-get",
                 "install_cmds": ["apt-get update && apt-get -y install ssh"],
@@ -110,40 +110,30 @@ class ProvisionManager:
             },
         ]
 
-        installed = False
         for pm in package_managers:
             try:
                 self.incus.exec(name, ["sh", "-c", pm["check_cmd"]], capture_output=True)
                 for cmd in pm["install_cmds"]:
                     self.incus.exec(name, ["sh", "-c", cmd], capture_output=False)
-                installed = True
-                break  # Exit loop on success
+                return True  # Installed
             except IncusCommandError:
                 continue  # Try next package manager
+        return False # Not installed
 
-        if not installed:
-            self.reporter.error(
-                f"Failed to install SSH server in {name}. "
-                "No supported package manager (apt-get, dnf, pacman) found.",
-            )
-            return
-
-        self.reporter.success(f"Filling authorized_keys in {name}...")
-        self.incus.exec(name, ["mkdir", "-p", "/root/.ssh"])
-
-        # Determine the content for authorized_keys
-        authorized_keys_content = ""
+    def _get_authorized_keys_content(self, ssh_config: Union[dict, bool]) -> str:
+        """Determines the content for authorized_keys."""
         source_path_str = ssh_config.get("authorized_keys") if isinstance(ssh_config, dict) else None
 
         if source_path_str:
             source_path = Path(source_path_str).expanduser()
             if source_path.exists():
                 with open(source_path, "r", encoding="utf-8") as f:
-                    authorized_keys_content = f.read()
+                    return f.read()
             else:
                 self.reporter.warning(
                     f"Provided authorized_keys file not found: {source_path}. Skipping copy.",
                 )
+                return ""
         else:
             # Concatenate all public keys from ~/.ssh/id_*.pub
             ssh_dir = Path.home() / ".ssh"
@@ -155,31 +145,55 @@ class ProvisionManager:
                     pub_keys_content.append(f.read().strip())
 
             if pub_keys_content:
-                authorized_keys_content = "\n".join(pub_keys_content) + "\n"
+                return "\n".join(pub_keys_content) + "\n"
             else:
                 self.reporter.warning(
                     "No public keys found in ~/.ssh/id_*.pub and no authorized_keys file provided. "
                     "SSH access might not be possible without a password.",
                 )
+                return ""
 
-        if authorized_keys_content:
-            fd, temp_path = tempfile.mkstemp(prefix="incant_authorized_keys_")
-            try:
-                with os.fdopen(fd, "w") as temp_file:
-                    temp_file.write(authorized_keys_content)
+    def _write_authorized_keys(self, name: str, content: str) -> None:
+        """Writes the authorized_keys content to the instance."""
+        if not content:
+            return
 
-                self.incus.file_push(
-                    FilePushConfig(
-                        instance_name=name,
-                        source=temp_path,
-                        target="/root/.ssh/authorized_keys",
-                        uid=0,
-                        gid=0,
-                        quiet=True,
-                    )
+        self.reporter.success(f"Filling authorized_keys in {name}...")
+        self.incus.exec(name, ["mkdir", "-p", "/root/.ssh"])
+
+        fd, temp_path = tempfile.mkstemp(prefix="incant_authorized_keys_")
+        try:
+            with os.fdopen(fd, "w") as temp_file:
+                temp_file.write(content)
+
+            self.incus.file_push(
+                FilePushConfig(
+                    instance_name=name,
+                    source=temp_path,
+                    target="/root/.ssh/authorized_keys",
+                    uid=0,
+                    gid=0,
+                    quiet=True,
                 )
-            finally:
-                os.remove(temp_path)
+            )
+        finally:
+            os.remove(temp_path)
+
+    def ssh_setup(self, name: str, ssh_config: Union[dict, bool]) -> None:
+        """Install SSH server and copy authorized_keys."""
+        if isinstance(ssh_config, bool):
+            ssh_config = {"clean_known_hosts": True}
+
+        self.reporter.success(f"Installing SSH server in {name}...")
+        if not self._install_ssh_server(name):
+            self.reporter.error(
+                f"Failed to install SSH server in {name}. "
+                "No supported package manager (apt-get, dnf, pacman) found.",
+            )
+            return
+
+        content = self._get_authorized_keys_content(ssh_config)
+        self._write_authorized_keys(name, content)
 
         if ssh_config.get("clean_known_hosts"):
             self.clean_known_hosts(name)
