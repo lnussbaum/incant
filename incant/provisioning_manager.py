@@ -118,7 +118,7 @@ class ProvisionManager:
                 return True  # Installed
             except IncusCommandError:
                 continue  # Try next package manager
-        return False # Not installed
+        return False  # Not installed
 
     def _get_authorized_keys_content(self, ssh_config: Union[dict, bool]) -> str:
         """Determines the content for authorized_keys."""
