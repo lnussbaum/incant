@@ -158,7 +158,7 @@ class Incant:
                     uid: 0
                     gid: 0
             """
-        )
+        ).lstrip()
 
         config_path = "incant.yaml"
 
