@@ -137,16 +137,16 @@ $ incant dump
 
 ### Shared folders don't work on ARM64
 
-It can be disabled using:
+This is known as [Incus issue #91](https://github.com/zabbly/incus/issues/91) and [virtiofsd issue #212](https://gitlab.com/virtio-fs/virtiofsd/-/issues/212).
+
+The default shared folder (/incant) can be disabled using:
 ```yaml
 instances:
   my-instance:
     shared_folder: false
 ```
 
-This is [Incus issue #91](https://github.com/zabbly/incus/issues/91) and [virtiofsd issue #212](https://gitlab.com/virtio-fs/virtiofsd/-/issues/212).
-
-### Virtual machines for RHEL-based distributions need an explicit agent:config device
+### Virtual machines (not containers) for RHEL-based distributions need an explicit agent:config device
 
 This can be added using a pre-launch command, with:
 ```yaml
