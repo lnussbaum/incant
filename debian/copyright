@@ -1,0 +1,16 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Source: <https://github.com/lnussbaum/incant>
+Upstream-Name: incant
+Upstream-Contact: Lucas Nussbaum <lucas@debian.org>
+
+Files:
+ *
+Copyright:
+ 2025 Lucas Nussbaum <lucas@debian.org>
+License: Apache-2.0
+
+Files:
+ debian/*
+Copyright:
+ 2025 Lucas Nussbaum <lucas@debian.org>
+License: Apache-2.0
