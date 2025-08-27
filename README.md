@@ -191,7 +191,16 @@ There are several other projects addressing similar problem spaces. They are sho
 * [cluster-api-provider-lxc (CAPL)](https://github.com/neoaggelos/cluster-api-provider-lxc) is an infrastructure provider for Kubernetes' Cluster API, which enables deploying Kubernetes clusters on Incus. Incant focuses on the more general use case of provisioning system containers or virtual machines outside of the Kubernetes world.
 * [devenv](https://devenv.sh/) is a [Nix](https://nixos.org/)-based development environment manager. It also uses a declarative file format. It goes further than Incant by including the definition of development tasks. It also covers defining services that run inside the environment, and generating OCI containers to deploy the environment to production. Incant focuses on providing the environment based on classical Linux distributions and tools.
 
-## License
+## Copyright and License
 
-This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.
+Copyright 2025 Lucas Nussbaum
 
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this software except in compliance with the License.  You may obtain a copy of
+the License at <http://www.apache.org/licenses/LICENSE-2.0>, or in the
+[LICENSE](LICENSE) file.
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations under the License.
