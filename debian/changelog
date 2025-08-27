@@ -1,5 +1,0 @@
-incant (0.2) unstable; urgency=medium
-
-  * Initial release. (Closes: #nnnn)  <nnnn is the bug number of your ITP>
-
- -- Lucas Nussbaum <lucas@debian.org>  Tue, 19 Aug 2025 13:56:29 +0200
