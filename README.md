@@ -160,6 +160,12 @@ instances:
 
 See [Incus documentation](https://linuxcontainers.org/incus/docs/main/reference/devices_disk/)
 
+### Name resolution (DNS) does not work for some images
+
+Some images enable [LLMNR](https://en.wikipedia.org/wiki/Link-Local_Multicast_Name_Resolution) or [mDNS](https://en.wikipedia.org/wiki/Multicast_DNS), so that their names are automatically resolvable from the host. For others, a custom provisioning step (`- llmnr: true`) can be added to enable LLMNR in `systemd-resolved` at instance startup.
+* Images that are known to work out of the box: debian/{11,12,13,14}, archlinux/current
+* Images that are known to work with `llmnr: true`: ubuntu/{22.04,24.04}, almalinux/{8,9,10}
+
 ## Incant compared to Vagrant
 
 Incant is inspired by Vagrant, and intended as an Incus-based replacement for Vagrant.
