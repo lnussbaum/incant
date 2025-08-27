@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE = 1
+export PYBUILD_NAME=incant
+
+%:
+	dh $@ --buildsystem=pybuild --with bash-completion
+
+override_dh_installman:
+	pandoc debian/incant.1.md -s -t man -o debian/incant.1
+	dh_installman debian/incant.1
+
+override_dh_clean:
+	rm -f debian/incant.1
+	dh_clean

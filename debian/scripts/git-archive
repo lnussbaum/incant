@@ -1,0 +1,6 @@
+#!/bin/bash
+set -ex
+V=$(git describe --tags --long | sed 's/^v//;s/-/+git/;s/-/./')
+echo $V
+git archive --format=tar.gz --prefix=incant-$V/ master --output=../incant_$V.orig.tar.gz
+

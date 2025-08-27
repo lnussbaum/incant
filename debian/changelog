@@ -1,0 +1,7 @@
+incant (0.2) UNRELEASED; urgency=medium
+
+  * Initial release. (Closes: #1112251)
+    + A native package is used for now, as Incant is still into heavy
+      development.
+
+ -- Lucas Nussbaum <lucas@debian.org>  Wed, 27 Aug 2025 22:49:38 +0200
