@@ -2,9 +2,9 @@ Source: incant
 Section: devel
 Priority: optional
 Maintainer: Lucas Nussbaum <lucas@debian.org>
-Build-Depends: bash-completion,
-               debhelper-compat (= 13),
+Build-Depends: debhelper-compat (= 13),
                dh-sequence-python3,
+               bash-completion,
                pandoc,
                pybuild-plugin-pyproject,
                python3-all,
@@ -25,7 +25,8 @@ Rules-Requires-Root: no
 
 Package: incant
 Architecture: all
-Depends: ${misc:Depends},
+Depends: incus-client,
+         ${misc:Depends},
          ${python3:Depends}
 Description: Incus frontend for declarative development environments
  Incant is a frontend for Incus that provides a declarative way to define and
