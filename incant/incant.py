@@ -157,6 +157,14 @@ class Incant:
                     mode: "0644"
                     uid: 0
                     gid: 0
+            almalinux:
+                image: images/almalinux/10
+                vm: true
+                pre-launch: # on RHEL-based distros VMs, that needs to be manually added
+                 - config device add almalinux agent disk source=agent:config
+                provision:
+                 - llmnr: true # LLMNR disabled by default on RHEL-based
+                 - ssh: true
             """
         ).lstrip()
 
