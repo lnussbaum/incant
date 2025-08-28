@@ -81,7 +81,7 @@ class ProvisionManager:
         try:
             self.incus.exec(instance_name, ["sh", "-c", "command -v dnf"], capture_output=True)
             self.incus.exec(
-                instance_name, ["sh", "-c", "dnf -y install systemd-resolved"], capture_output=False
+                instance_name, ["sh", "-c", "dnf -y -q install systemd-resolved"], capture_output=False
             )
             return
         except IncusCommandError:
@@ -166,7 +166,7 @@ EOF
             {
                 "check_cmd": "command -v dnf",
                 "install_cmds": [
-                    "dnf -y install openssh-server",
+                    "dnf -y -q install openssh-server",
                     "systemctl enable sshd",
                     "systemctl start sshd",
                 ],
