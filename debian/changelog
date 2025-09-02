@@ -1,8 +1,8 @@
-incant (0.2) UNRELEASED; urgency=medium
+incant (0.3) unstable; urgency=medium
 
   * Initial release. (Closes: #1112251)
     + A native package is used for now, as Incant is still into heavy
       development, so it's easier to keep everything in the same Git
       branch.
 
- -- Lucas Nussbaum <lucas@debian.org>  Wed, 27 Aug 2025 22:49:38 +0200
+ -- Lucas Nussbaum <lucas@debian.org>  Tue, 02 Sep 2025 22:33:50 +0200
