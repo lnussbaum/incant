@@ -16,7 +16,7 @@ Build-Depends: debhelper-compat (= 13),
                python3-pytest-cov,
                python3-setuptools,
                python3-yaml
-Testsuite: autopkgtest-pkg-python
+Testsuite: autopkgtest-pkg-pybuild
 Standards-Version: 4.7.2
 Homepage: https://github.com/lnussbaum/incant
 Vcs-Browser: https://salsa.debian.org/debian/incant
