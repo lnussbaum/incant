@@ -1,3 +1,9 @@
+incant (0.4) unstable; urgency=medium
+
+  * Improve documentation (see #1121887)
+
+ -- Lucas Nussbaum <lucas@debian.org>  Fri, 05 Dec 2025 14:01:54 +0100
+
 incant (0.3) unstable; urgency=medium
 
   * Initial release. (Closes: #1112251)
