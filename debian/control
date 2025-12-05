@@ -28,6 +28,7 @@ Architecture: all
 Depends: incus-client,
          ${misc:Depends},
          ${python3:Depends}
+Recommends: incus
 Description: Incus frontend for declarative development environments
  Incant is a frontend for Incus that provides a declarative way to define and
  manage development environments. It simplifies the creation, configuration,

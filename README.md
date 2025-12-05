@@ -28,10 +28,47 @@ pipx install git+https://github.com/lnussbaum/incant.git
 
 ## Usage
 
-## Configure Incant
+### Install and configure Incus
 
-Incant looks for a configuration file named `incant.yaml`, `incant.yaml.j2`, or `incant.yaml.mako` in the current directory. Here is an example:
+[Incus](https://linuxcontainers.org/incus/) is required by Incant. [Incus' documentation](https://linuxcontainers.org/incus/docs/main/) describes how to install it, but in short, you can do:
+```sh
+# install Incus from your distribution's packages
+apt-get -y install incus
 
+# Configure Incus with default settings
+incus admin init --auto
+
+# Add yourself to the incus-admin group
+usermod -a -G incus-admin <your_login>
+
+# Gain the new group in the current shell (alternatively, you can log out and log in again)
+newgrp incus-admin
+```
+### Configure Incant
+
+Incant looks for a configuration file named `incant.yaml`, `incant.yaml.j2`, or `incant.yaml.mako` in the current directory.
+
+You can ask Incant to create an example configuration file with:
+```sh
+$ incant init
+```
+
+A very basic example:
+```yaml
+instances:
+  debian-sid:
+    image: images:debian/14
+```
+
+Another example, that starts a KVM virtual machine:
+```yaml
+instances:
+  debian-sid:
+    image: images:debian/14
+    vm: true
+```
+
+A more complex example that demonstrates most of Incant's features:
 ```yaml
 instances:
   basic-container:
@@ -71,19 +108,13 @@ instances:
           gid: 0
 ```
 
-You can also ask Incant to create an example in the current directory:
-
-```sh
-$ incant init
-```
-
 ### Initialize and Start an Instance
 
 ```sh
 $ incant up
 ```
 
-or for a specific instance:
+or for a specific instance, if you have several instances described in your configuration file:
 
 ```sh
 $ incant up my-instance
@@ -107,7 +138,7 @@ Use [Incus commands](https://linuxcontainers.org/incus/docs/main/instances/) to 
 
 ```sh
 $ incus exec ubuntu-container -- apt-get update
-$ incus shell my-instance
+$ incus shell my-instance # or `incant shell` if you have a single instance
 $ incus console my-instance
 $ incus file edit my-container/etc/hosts
 $ incus file delete <instance_name>/<path_to_file>
