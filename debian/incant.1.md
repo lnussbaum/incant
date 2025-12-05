@@ -52,3 +52,7 @@ incant - an Incus frontend for declarative development environments
 # SEE ALSO
 
 **incus**(1)
+
+/usr/share/doc/incant/README.md.gz
+
+https://github.com/lnussbaum/incant/
