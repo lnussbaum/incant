@@ -38,6 +38,13 @@ def _handle_error(error: Exception, reporter: Reporter) -> None:
 
 
 @cli.command()
+@click.pass_context
+def help(ctx):
+    """Print the help."""
+    click.echo(ctx.parent.get_help())
+
+
+@cli.command()
 @click.argument("name", required=False)
 @click.pass_context
 def up(ctx, name: Optional[str]):
