@@ -259,6 +259,32 @@ class TestIncant:
         incant_app.provisioner.provision.assert_called_once_with("test-instance", ["script.sh"])
 
     @patch("incant.incant.time.sleep", return_value=None)
+    def test_up_single_instance_with_provision_but_disabled(
+        self,
+        mock_sleep,
+        incant_app,
+        mock_config_manager,
+        mock_incus_cli,
+        mock_provision_manager,
+        mock_reporter,
+    ):
+        instance_config = InstanceConfig(
+            name="test-instance", image="img", provision=["script.sh"], shared_folder=False
+        )
+        mock_config_manager.instance_configs = {"test-instance": instance_config}
+        mock_incus_cli.is_agent_running.return_value = True
+        mock_incus_cli.is_agent_usable.return_value = True
+        mock_incus_cli.is_instance_ready.return_value = True  # Provision implies wait
+
+        incant_app.up("test-instance", provision=False)
+
+        mock_incus_cli.create_instance.assert_called_once_with(instance_config)
+        mock_incus_cli.is_agent_running.assert_called_once_with("test-instance")
+        mock_incus_cli.is_agent_usable.assert_called_once_with("test-instance")
+        mock_incus_cli.is_instance_ready.assert_called_once_with("test-instance", True)
+        incant_app.provisioner.provision.assert_not_called()
+
+    @patch("incant.incant.time.sleep", return_value=None)
     def test_up_single_instance_with_shared_folder(
         self, mock_sleep, incant_app, mock_config_manager, mock_incus_cli, mock_reporter
     ):
