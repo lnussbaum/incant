@@ -8,7 +8,7 @@ _incant_completions() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     
     # Commands like up, provision, destroy, list, dump
-    opts="up provision destroy shell list dump init -f --config"
+    opts="up provision destroy shell list dump init help -f --config"
 
 
     # Handle auto-completion based on the previous command word
@@ -29,7 +29,7 @@ _incant_completions() {
             COMPREPLY=( $(compgen -W "${instance_names}" -- ${cur}) )
             return 0
             ;;
-        "list"|"dump"|"init")
+        "list"|"dump"|"init"|"help")
             # No further completion needed
             return 0
             ;;
