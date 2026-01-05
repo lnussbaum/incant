@@ -46,11 +46,12 @@ def help(ctx):
 
 @cli.command()
 @click.argument("name", required=False)
+@click.option("--no-provision", is_flag=True, help="Skip provisioning after starting the instances.")
 @click.pass_context
-def up(ctx, name: Optional[str]):
+def up(ctx, name: Optional[str], no_provision: Optional[bool]):
     """Start and provision an instance or all instances if no name is provided."""
     try:
-        Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).up(name)
+        Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).up(name, provision=not no_provision)
     except IncantError as e:
         _handle_error(e, ctx.obj["REPORTER"])
 

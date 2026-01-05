@@ -40,7 +40,7 @@ class Incant:
     def dump_config(self):
         self.config_manager.dump_config()
 
-    def up(self, name=None):
+    def up(self, name=None, provision: bool = True):
         instance_configs = self._get_instance_configs(name)
 
         # Step 1 -- Create instances (we do this for all instances so that they can
@@ -82,7 +82,7 @@ class Incant:
             if instance_config.shared_folder:
                 self.incus.create_shared_folder(instance_config.name)
 
-            if instance_config.provision:
+            if instance_config.provision and provision:
                 # Automatically run provisioning after instance creation
                 self.provision(instance_config.name)
 
