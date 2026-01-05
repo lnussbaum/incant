@@ -197,6 +197,12 @@ Some images enable [LLMNR](https://en.wikipedia.org/wiki/Link-Local_Multicast_Na
 * Images that are known to work out of the box: debian/{11,12,13,14}, archlinux/current
 * Images that are known to work with `llmnr: true`: ubuntu/{22.04,24.04}, almalinux/{8,9,10}
 
+### No network connectivity when Docker is installed
+
+If Docker is installed on the same machine as Incus is running on, started instances may not have
+network connectivity. See the Incus documentation for how to mitigate that:
+[Prevent connectivity issues with Incus and Docker](https://linuxcontainers.org/incus/docs/main/howto/network_bridge_firewalld/#prevent-connectivity-issues-with-incus-and-docker)
+
 ## Incant compared to Vagrant
 
 Incant is inspired by Vagrant, and intended as an Incus-based replacement for Vagrant.
