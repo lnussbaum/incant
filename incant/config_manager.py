@@ -1,5 +1,4 @@
 import os
-import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -11,6 +10,8 @@ from mako import exceptions as mako_exceptions
 from mako.template import Template
 
 from .exceptions import ConfigurationError
+from .incus_cli import IncusCLI
+from .provisioners import REGISTERED_PROVISIONERS
 from .reporter import Reporter
 from .types import InstanceConfig, InstanceDict
 
@@ -18,11 +19,13 @@ from .types import InstanceConfig, InstanceDict
 class ConfigManager:
     def __init__(
         self,
+        incus: IncusCLI,
         reporter: Reporter,
         config_path: Optional[str] = None,
         verbose: bool = False,
         no_config: bool = False,
     ):
+        self.incus = incus
         self.reporter = reporter
         self.config_path = config_path
         self.verbose = verbose
@@ -130,13 +133,14 @@ class ConfigManager:
         except Exception as e:  # pylint: disable=broad-exception-caught
             raise ConfigurationError(f"Error dumping configuration: {e}") from e
 
-    def _validate_provision_step(self, step, step_idx, name):
+    def _validate_provision_step(self, step: Any, step_idx: int, name: str) -> None:
         if isinstance(step, str):
+            REGISTERED_PROVISIONERS.get("script")(self.incus, self.reporter).validate_config(name, step)
             return
 
         if not isinstance(step, dict):
             raise ConfigurationError(
-                f"Provisioning step {step_idx} in instance '{name}' " "must be a string or a dictionary."
+                f"Provisioning step {step_idx} in instance '{name}' must be a string or a dictionary."
             )
 
         if len(step) != 1:
@@ -147,101 +151,31 @@ class ConfigManager:
 
         key, value = list(step.items())[0]
 
-        if key not in ["copy", "ssh", "llmnr"]:
+        if key not in REGISTERED_PROVISIONERS.keys():
             raise ConfigurationError(
                 f"Unknown provisioning step type '{key}' in instance '{name}'. "
-                "Accepted types are 'copy', 'ssh', or 'llmnr'."
+                f"Accepted types are {', '.join(REGISTERED_PROVISIONERS.keys())}."
             )
 
-        if key == "copy":
-            if not isinstance(value, dict):
-                raise ConfigurationError(
-                    f"Provisioning 'copy' step in instance '{name}' must have a dictionary value."
-                )
-            self._validate_copy_step(value, name)
-
-        if key == "ssh":
-            self._validate_ssh_step(value, name)
-
-        if key == "llmnr":
-            self._validate_llmnr_step(value, name)
-
-    def _validate_copy_step(self, value, name):
-        required_fields = ["source", "target"]
-        missing = [field for field in required_fields if field not in value]
-        if missing:
-            raise ConfigurationError(
-                (
-                    f"Provisioning 'copy' step in instance '{name}' is missing required "
-                    f"field(s): {', '.join(missing)}."
-                )
-            )
-        if not isinstance(value["source"], str) or not isinstance(value["target"], str):
-            raise ConfigurationError(
-                (f"Provisioning 'copy' step in instance '{name}' must have string " "'source' and 'target'.")
-            )
-
-        if "uid" in value and not isinstance(value["uid"], int):
-            raise ConfigurationError(
-                (f"Provisioning 'copy' step in instance '{name}' has invalid 'uid': " "must be an integer.")
-            )
-        if "gid" in value and not isinstance(value["gid"], int):
-            raise ConfigurationError(
-                (f"Provisioning 'copy' step in instance '{name}' has invalid 'gid': " "must be an integer.")
-            )
-        if "mode" in value:
-            mode_val = value["mode"]
-            if not isinstance(mode_val, str):
-                raise ConfigurationError(
-                    (
-                        f"Provisioning 'copy' step in instance '{name}' has invalid 'mode': "
-                        "must be a string like '0644'."
-                    )
-                )
-            if re.fullmatch(r"[0-7]{3,4}", mode_val) is None:
-                raise ConfigurationError(
-                    (
-                        f"Provisioning 'copy' step in instance '{name}' has invalid 'mode': "
-                        "must be 3-4 octal digits (e.g., '644' or '0644')."
-                    )
-                )
-        if "recursive" in value and not isinstance(value["recursive"], bool):
-            raise ConfigurationError(
-                (
-                    f"Provisioning 'copy' step in instance '{name}' has invalid 'recursive': "
-                    "must be a boolean."
-                )
-            )
-        if "create_dirs" in value and not isinstance(value["create_dirs"], bool):
-            raise ConfigurationError(
-                (
-                    f"Provisioning 'copy' step in instance '{name}' has invalid "
-                    "'create_dirs': must be a boolean."
-                )
-            )
-
-    def _validate_ssh_step(self, value, name):
-        if not isinstance(value, (bool, dict)):
-            raise ConfigurationError(
-                f"Provisioning 'ssh' step in instance '{name}' must have a boolean " "or dictionary value."
-            )
-
-    def _validate_llmnr_step(self, value, name):
-        if not isinstance(value, bool):
-            raise ConfigurationError(
-                f"Provisioning 'llmnr' step in instance '{name}' must have a boolean value."
-            )
+        REGISTERED_PROVISIONERS.get(key)(self.incus, self.reporter).validate_config(name, value)
 
     def _validate_provisioning(self, instance: InstanceConfig, name: str):
-        if instance.provision is not None:
-            provisions = instance.provision
-            if isinstance(provisions, list):
-                for step_idx, step in enumerate(provisions):
-                    self._validate_provision_step(step, step_idx, name)
-            elif not isinstance(provisions, str):
-                raise ConfigurationError(
-                    f"Provisioning for instance '{name}' must be a string or a list of steps."
-                )
+        if instance.provision is None:
+            return
+
+        provisions = instance.provision
+
+        # Handle special "script" single-step provisioning.
+        if isinstance(provisions, str):
+            provisions = [provisions]
+
+        if isinstance(provisions, list):
+            for step_idx, step in enumerate(provisions):
+                self._validate_provision_step(step, step_idx, name)
+        else:
+            raise ConfigurationError(
+                f"Provisioning for instance '{name}' must be a string or a list of steps."
+            )
 
     def _validate_pre_launch(self, instance: InstanceConfig, name: str):
         if instance.pre_launch_cmds is not None:
@@ -261,7 +195,6 @@ class ConfigManager:
             raise ConfigurationError("No instances found in config")
 
         for name, instance_config in self.instance_configs.items():
-
             # Validate 'provision' field
             self._validate_provisioning(instance_config, name)
             self._validate_pre_launch(instance_config, name)

@@ -15,9 +15,11 @@ from .types import InstanceDict
 class Incant:
     def __init__(self, reporter: Reporter, **kwargs):
         self.reporter = reporter
+        self.incus = IncusCLI(self.reporter)
         self.verbose = kwargs.get("verbose", False)
         self.no_config = kwargs.get("no_config", False)
         self.config_manager = ConfigManager(
+            incus=self.incus,
             reporter=self.reporter,
             config_path=kwargs.get("config", None),
             verbose=self.verbose,
@@ -25,8 +27,7 @@ class Incant:
         )
         if not self.no_config:
             self.config_manager.validate_config()
-        self.incus = IncusCLI(self.reporter)
-        self.provisioner = ProvisionManager(self.incus, self.reporter)
+        self.provision_manager = ProvisionManager(self.incus, self.reporter)
 
     def _get_instance_configs(self, name: Optional[str] = None) -> InstanceDict:
         """Helper to get instance configs, either all or a specific one."""
@@ -91,7 +92,7 @@ class Incant:
 
         for instance_name, instance_config in instances_to_provision.items():
             if instance_config.provision:
-                self.provisioner.provision(instance_name, instance_config.provision)
+                self.provision_manager.provision(instance_name, instance_config.provision)
 
     def destroy(self, name=None):
         instances_to_destroy = self._get_instance_configs(name)
@@ -119,8 +120,7 @@ class Incant:
             self.reporter.echo(f"{instance_name}")
 
     def incant_init(self):
-        example_config = textwrap.dedent(
-            """
+        example_config = textwrap.dedent("""
           instances:
             basic-container:
               image: images:ubuntu/24.04
@@ -165,8 +165,7 @@ class Incant:
                 provision:
                  - llmnr: true # LLMNR disabled by default on RHEL-based
                  - ssh: true
-            """
-        ).lstrip()
+            """).lstrip()
 
         config_path = "incant.yaml"
 
