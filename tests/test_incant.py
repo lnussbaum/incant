@@ -282,7 +282,7 @@ class TestIncant:
         mock_incus_cli.is_agent_running.assert_called_once_with("test-instance")
         mock_incus_cli.is_agent_usable.assert_called_once_with("test-instance")
         mock_incus_cli.is_instance_ready.assert_called_once_with("test-instance", True)
-        incant_app.provisioner.provision.assert_not_called()
+        incant_app.provision_manager.provision.assert_not_called()
 
     @patch("incant.incant.time.sleep", return_value=None)
     def test_up_single_instance_with_shared_folder(

@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pytest
 import yaml
 
@@ -33,11 +35,17 @@ def mock_reporter():
     return MockReporter()
 
 
+@pytest.fixture
+def mock_incus_cli():
+    mock = Mock()
+    return mock
+
+
 def run_test_with_config(tmp_path, mock_reporter, config, error_msg):
     config_file = tmp_path / "incant.yaml"
     config_file.write_text(yaml.dump(config))
     with pytest.raises(ConfigurationError, match=error_msg):
-        ConfigManager(mock_reporter, config_path=str(config_file))
+        ConfigManager(mock_incus_cli, mock_reporter, config_path=str(config_file))
 
 
 def test_missing_image(tmp_path, mock_reporter):
