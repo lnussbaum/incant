@@ -77,7 +77,9 @@ class CopyFile(Provisioner):
                 )
             )
 
-    def provision(self, instance_name: str, config: dict):
+    def provision(self, instance_name: str, config: Union[bool, dict, str]):
         """Copy a file to the instance."""
+        if not isinstance(config, dict):
+            raise TypeError(f"Config for CopyFile provisioner must be a dict, got {type(config)}")
         config["instance_name"] = instance_name
         self.incus.file_push(FilePushConfig(**config))

@@ -29,11 +29,11 @@ class ProvisionManager:
                 self.reporter.info(f"Running provisioning step {step_idx} ...")
                 if isinstance(step, dict):
                     step_provisioner_type, step_config = tuple(step.items())[0]
-                    REGISTERED_PROVISIONERS.get(step_provisioner_type)(self.incus, self.reporter).provision(
+                    REGISTERED_PROVISIONERS[step_provisioner_type](self.incus, self.reporter).provision(
                         instance_name, step_config
                     )
                 else:
-                    REGISTERED_PROVISIONERS.get("script")(self.incus, self.reporter).provision(
+                    REGISTERED_PROVISIONERS["script"](self.incus, self.reporter).provision(
                         instance_name, step
                     )
         else:

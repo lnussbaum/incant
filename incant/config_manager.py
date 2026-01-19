@@ -135,7 +135,7 @@ class ConfigManager:
 
     def _validate_provision_step(self, step: Any, step_idx: int, name: str) -> None:
         if isinstance(step, str):
-            REGISTERED_PROVISIONERS.get("script")(self.incus, self.reporter).validate_config(name, step)
+            REGISTERED_PROVISIONERS["script"](self.incus, self.reporter).validate_config(name, step)
             return
 
         if not isinstance(step, dict):
@@ -157,7 +157,7 @@ class ConfigManager:
                 f"Accepted types are {', '.join(REGISTERED_PROVISIONERS.keys())}."
             )
 
-        REGISTERED_PROVISIONERS.get(key)(self.incus, self.reporter).validate_config(name, value)
+        REGISTERED_PROVISIONERS[key](self.incus, self.reporter).validate_config(name, value)
 
     def _validate_provisioning(self, instance: InstanceConfig, name: str):
         if instance.provision is None:

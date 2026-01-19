@@ -156,8 +156,10 @@ class SSHServer(Provisioner):
         finally:
             os.remove(temp_path)
 
-    def provision(self, instance_name: str, config: Union[dict, bool]) -> None:
+    def provision(self, instance_name: str, config: Union[bool, dict, str]) -> None:
         """Install SSH server and copy authorized_keys."""
+        if not isinstance(config, (bool, dict)):
+            raise TypeError(f"Config for SSHServer provisioner must be a bool or dict, got {type(config)}")
         if isinstance(config, bool):
             config = {"clean_known_hosts": True}
 

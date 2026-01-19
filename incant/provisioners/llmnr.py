@@ -68,8 +68,10 @@ EOF
         self.reporter.info("Restarting systemd-resolved...")
         self.incus.exec(instance_name, ["systemctl", "restart", "systemd-resolved"])
 
-    def provision(self, instance_name: str, config: bool) -> None:
+    def provision(self, instance_name: str, config: Union[bool, dict, str]) -> None:
         """Enable LLMNR on an instance."""
+        if not isinstance(config, bool):
+            raise TypeError(f"Config for LLMNR provisioner must be a bool, got {type(config)}")
         if not config:
             return
 

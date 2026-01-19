@@ -14,7 +14,7 @@ class Provisioner(abc.ABC):
 
     # The name of the key used to identify this provisioner in the
     # incant config.
-    config_key: ClassVar[str] = None
+    config_key: ClassVar[str] = ""
 
     def __init__(self, incus_cli: "IncusCLI", reporter: Reporter):
         self.incus = incus_cli
