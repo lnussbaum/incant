@@ -177,7 +177,7 @@ class Incant:
 
         print(f"Example configuration written to {config_path}")
 
-    def shell(self, name: Optional[str] = None):
+    def shell(self, name: Optional[str] = None) -> int:
         instance_name = name
         if not instance_name:
             instance_names = list(self.config_manager.instance_configs.keys())
@@ -189,4 +189,4 @@ class Incant:
         if instance_name not in self.config_manager.instance_configs:
             raise InstanceError(f"Instance '{instance_name}' not found in config")
 
-        self.incus.shell(instance_name)
+        return self.incus.shell(instance_name)

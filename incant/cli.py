@@ -73,7 +73,8 @@ def provision(ctx, name: Optional[str] = None):
 def shell(ctx, name: Optional[str]):
     """Open a shell into an instance. If no name is given and there is only one instance, use it."""
     try:
-        Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).shell(name)
+        ret = Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).shell(name)
+        sys.exit(ret)
     except IncantError as e:
         _handle_error(e, ctx.obj["REPORTER"])
 
