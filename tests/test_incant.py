@@ -59,7 +59,7 @@ def incant_app(mock_reporter, mock_config_manager, mock_incus_cli, mock_provisio
     with patch("incant.incant.ConfigManager", return_value=mock_config_manager):
         app = Incant(reporter=mock_reporter)
         app.incus = mock_incus_cli
-        app.provisioner = mock_provision_manager
+        app.provision_manager = mock_provision_manager
         return app
 
 
@@ -206,7 +206,7 @@ class TestIncant:
         mock_incus_cli.is_agent_usable.assert_called_once_with("test-instance")
         mock_incus_cli.is_instance_ready.assert_not_called()
         mock_incus_cli.create_shared_folder.assert_not_called()
-        incant_app.provisioner.provision.assert_not_called()
+        incant_app.provision_manager.provision.assert_not_called()
         assert ("success", "Creating instance test-instance with image img...") in mock_reporter.messages
         assert ("success", "Sharing current directory to test-instance:/incant ...") in mock_reporter.messages
 
@@ -256,7 +256,7 @@ class TestIncant:
         mock_incus_cli.is_agent_running.assert_called_once_with("test-instance")
         mock_incus_cli.is_agent_usable.assert_called_once_with("test-instance")
         mock_incus_cli.is_instance_ready.assert_called_once_with("test-instance", True)
-        incant_app.provisioner.provision.assert_called_once_with("test-instance", ["script.sh"])
+        incant_app.provision_manager.provision.assert_called_once_with("test-instance", ["script.sh"])
 
     @patch("incant.incant.time.sleep", return_value=None)
     def test_up_single_instance_with_provision_but_disabled(
@@ -282,7 +282,7 @@ class TestIncant:
         mock_incus_cli.is_agent_running.assert_called_once_with("test-instance")
         mock_incus_cli.is_agent_usable.assert_called_once_with("test-instance")
         mock_incus_cli.is_instance_ready.assert_called_once_with("test-instance", True)
-        incant_app.provisioner.provision.assert_not_called()
+        incant_app.provision_manager.provision.assert_not_called()
 
     @patch("incant.incant.time.sleep", return_value=None)
     def test_up_single_instance_with_shared_folder(
