@@ -231,3 +231,27 @@ def test_valid_config_no_pre_launch(tmp_path, mock_reporter):
     cm = ConfigManager(mock_incus_cli, mock_reporter, config_path=str(config_file))
     # No exception should be raised
     assert cm.instance_configs["test"].pre_launch_cmds == []
+
+
+def test_valid_provision_steps(tmp_path, mock_reporter, mock_incus_cli):
+    """Test that valid provision steps are accepted."""
+    config = {
+        "instances": {
+            "test": {
+                "image": "ubuntu",
+                "provision": [
+                    {"llmnr": True},
+                    {"ssh": True},
+                    {"copy": {"source": "src", "target": "dest"}},
+                    "script.sh",
+                ],
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+
+    # Should not raise any exception
+    cm = ConfigManager(mock_incus_cli, mock_reporter, config_path=str(config_file))
+    cm.load_config()
+    cm.validate_config()

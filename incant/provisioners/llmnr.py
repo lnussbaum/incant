@@ -4,8 +4,8 @@ from ..exceptions import ConfigurationError, IncusCommandError
 from .base import Provisioner
 
 
-class LLMR(Provisioner):
-    config_key = "llmr"
+class LLMNR(Provisioner):
+    config_key = "llmnr"
 
     def validate_config(self, instance_name: str, config: Union[bool, dict, str]):
         if not isinstance(config, bool):
