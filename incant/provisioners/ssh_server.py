@@ -90,11 +90,12 @@ class SSHServer(Provisioner):
         for pm in package_managers:
             try:
                 self.incus.exec(name, ["sh", "-c", pm["check_cmd"]], capture_output=True)
-                for cmd in pm["install_cmds"]:
-                    self.incus.exec(name, ["sh", "-c", cmd], capture_output=False)
-                return True  # Installed
             except IncusCommandError:
                 continue  # Try next package manager
+
+            for cmd in pm["install_cmds"]:
+                self.incus.exec(name, ["sh", "-c", cmd], capture_output=False)
+            return True  # Installed
         return False  # Not installed
 
     def _get_authorized_keys_content(self, ssh_config: Union[dict, bool]) -> str:
