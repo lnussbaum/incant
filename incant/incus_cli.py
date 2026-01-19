@@ -299,16 +299,14 @@ class IncusCLI:
         )
         self._run_command(command, capture_output=False, quiet=file_push_config.quiet)
 
-    def shell(self, name: str) -> None:
+    def shell(self, name: str) -> int:
         """Opens an interactive shell in the specified Incus instance."""
         self.reporter.success(f"Opening shell in {name}...")
-        try:
-            subprocess.run(  # nosec B603
-                [self.incus_cmd, "shell", name],
-                check=True,
-                stdin=sys.stdin,
-                stdout=sys.stdout,
-                stderr=sys.stderr,
-            )
-        except subprocess.CalledProcessError as e:
-            raise InstanceError(f"Failed to open shell in {name}: {e}") from e
+        result = subprocess.run(  # nosec B603
+            [self.incus_cmd, "shell", name],
+            check=False,
+            stdin=sys.stdin,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+        return result.returncode
