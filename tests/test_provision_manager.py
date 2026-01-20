@@ -1,8 +1,7 @@
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, call
 
 import pytest
 
-from incant.exceptions import IncusCommandError
 from incant.provisioning_manager import ProvisionManager
 from incant.reporter import Reporter
 
