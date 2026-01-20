@@ -1,4 +1,4 @@
-from unittest.mock import Mock, call
+from unittest.mock import Mock
 import pytest
 from incant.provisioners.ssh_server import SSHServer
 from incant.exceptions import IncusCommandError

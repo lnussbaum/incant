@@ -1,4 +1,3 @@
-import subprocess
 from unittest.mock import patch
 from incant.incus_cli import IncusCLI
 from incant.reporter import Reporter
