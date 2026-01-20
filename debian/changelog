@@ -1,3 +1,23 @@
+incant (0.5) unstable; urgency=medium
+
+  [ Daniel Roschka ]
+  * Add a separate help command
+  * Document network problems with Docker installed
+  * Add help command to bash completion
+  * Add an option to skip provisioning
+  * Refactor provisioners for better modularity
+  * Fix failing tests
+
+  [ Lucas Nussbaum ]
+  * Fix typo in LLMNR provisioner and strengthen tests
+  * Fix mypy type-checking issues in provisioners
+  * fix: propagate shell exit code instead of raising error (fixes #4)
+  * Fix misleading error message when SSH installation fails
+  * .github/workflows: fix flake8
+  * style: remove unused imports in tests
+
+ -- Lucas Nussbaum <lucas@debian.org>  Tue, 20 Jan 2026 09:21:16 +0100
+
 incant (0.4) unstable; urgency=medium
 
   * Improve documentation (see #1121887)

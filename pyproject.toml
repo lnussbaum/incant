@@ -1,6 +1,6 @@
 [project]
 name = "incus-incant"
-version = "0.3"
+version = "0.5"
 description = "Incant — an Incus frontend for declarative development environments"
 readme = "README.md"
 authors = [
