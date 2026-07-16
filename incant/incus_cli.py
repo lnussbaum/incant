@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import shlex
@@ -110,15 +111,23 @@ class IncusCLI:
 
     def create_shared_folder(self, name: str) -> None:
         curdir = Path.cwd()
+        self.create_shared_folder_device(name, source=str(curdir), path='/incant')
+
+    def create_shared_folder_device(self, name: str, source: str, path: str) -> None:
+        device_name = "{name}_shared_{hash}".format(
+            name=name,
+            hash=hashlib.sha1(path.encode()).hexdigest()[:10],
+        )
+
         command = [
             "config",
             "device",
             "add",
             name,
-            f"{name}_shared_incant",
+            device_name,
             "disk",
-            f"source={curdir}",
-            "path=/incant",
+            f"source={source}",
+            f"path={path}",
             "shift=true",  # First attempt with shift enabled
         ]
 
@@ -153,7 +162,7 @@ class IncusCLI:
                 "Shared folder creation failed (/incant not mounted). Retrying...",
             )
             self._run_command(
-                ["config", "device", "remove", name, f"{name}_shared_incant"],
+                ["config", "device", "remove", name, device_name],
                 capture_output=False,
             )
             self._run_command(command, capture_output=False)
