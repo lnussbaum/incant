@@ -113,6 +113,17 @@ class IncusCLI:
         curdir = Path.cwd()
         self.create_shared_folder_device(name, source=str(curdir), path='/incant')
 
+    def create_shared_folders(self, name: str, shared_folders: List[str]) -> None:
+        curdir = Path.cwd()
+
+        for shared_folder in shared_folders:
+            source, path = shared_folder.split(':')
+
+            source = (curdir / Path(source.strip())).absolute()
+            path = path.strip()
+
+            self.create_shared_folder_device(name, source=source, path=path)
+
     def create_shared_folder_device(self, name: str, source: str, path: str) -> None:
         device_name = "{name}_shared_{hash}".format(
             name=name,

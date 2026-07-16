@@ -20,6 +20,7 @@ class InstanceConfig:
     pre_launch_cmds: Optional[List[str]] = field(default_factory=list)
     wait: bool = False
     shared_folder: bool = True
+    shared_folders: Optional[List[str]] = None
     provision: Optional[ProvisionSteps] = None
 
 
