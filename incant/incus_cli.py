@@ -83,10 +83,8 @@ class IncusCLI:
                 command.extend(["--config", f"{key}={value}"])
         if instance_config.devices:
             for dev_name, dev_attrs in instance_config.devices.items():
-                dev_str = f"{dev_name}"
                 for k, v in dev_attrs.items():
-                    dev_str += f",{k}={v}"
-                command.extend(["--device", dev_str])
+                    command.extend(["--device", f"{dev_name},{k}={v}"])
         if instance_config.network:
             command.extend(["--network", instance_config.network])
         if instance_config.instance_type:
