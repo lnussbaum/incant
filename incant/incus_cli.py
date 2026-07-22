@@ -96,7 +96,9 @@ class IncusCLI:
     def create_instance(self, instance_config: InstanceConfig) -> None:
         """Creates a new instance with optional parameters."""
         if self.is_instance(instance_config.name):
-            raise InstanceError(f'Instance "{instance_config.name}" already exists.')
+            self.reporter.warning(f'Instance "{instance_config.name}" totally skipped, it already exists.')
+            self.reporter.info("Consider to use `incant provision`")
+            return
 
         command = self._build_launch_command(instance_config)
         self._run_command(command)
