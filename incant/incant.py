@@ -119,6 +119,25 @@ class Incant:
         for instance_name in self.config_manager.instance_configs:
             self.reporter.echo(f"{instance_name}")
 
+    def etc_hosts_snippet(self):
+        """Generate a snippet for in /etc/hosts
+
+        Queries incus for addresses, IPv4 & IPv6, for each defined instance.
+        Instance has to be running for getting an address from incus.
+
+        The idea of markers '# BEGIN INCANT' and '# END INCANT'
+        comes from ansible module blockinfile.
+        """
+        if not self.config_manager.instance_configs:
+            raise ConfigurationError("No instances found in config.")
+
+        ipa = 300  # a very faked IP address
+        self.reporter.echo("# BEGIN INCANT curdir")
+        for instance_name in self.config_manager.instance_configs:
+            ipa = ipa + 1  # faked IP-address lookup
+            self.reporter.echo(f"{ipa} {instance_name}")
+        self.reporter.echo("# END INCANT curdir")
+
     def incant_init(self):
         example_config = textwrap.dedent("""
           instances:

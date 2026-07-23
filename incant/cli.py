@@ -120,3 +120,13 @@ def init(ctx):
         inc.incant_init()
     except IncantError as e:
         _handle_error(e, ctx.obj["REPORTER"])
+
+
+@cli.command()
+@click.pass_context
+def hosts(ctx):
+    """Generate /etc/hosts snippet for each defined and running instance."""
+    try:
+        Incant(reporter=ctx.obj["REPORTER"], **ctx.obj["OPTIONS"]).etc_hosts_snippet()
+    except IncantError as e:
+        _handle_error(e, ctx.obj["REPORTER"])
