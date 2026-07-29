@@ -44,6 +44,15 @@ incant - an Incus frontend for declarative development environments
 **list**
 : List all instances defined in the configuration.
 
+It can be used for stop and start.
+```shell
+incus list
+for i in $(incant list | tac); do echo $i ; incus stop $i ; done
+incus list
+for i in $(incant list); do echo $i ; incus start ; done
+incus list
+```
+
 # FILES
 
 *incant.yaml*
