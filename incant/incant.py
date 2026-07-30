@@ -1,4 +1,6 @@
+import json
 import os
+import subprocess
 import textwrap
 import time
 from typing import Optional
@@ -131,11 +133,16 @@ class Incant:
         if not self.config_manager.instance_configs:
             raise ConfigurationError("No instances found in config.")
 
-        ipa = 300  # a very faked IP address
+        cmd = "incus list --format json"
+        incus_list = json.loads(subprocess.check_output(cmd, shell=True))
+
+        nwd = {}  # network dictionary
+        for instance in incus_list:
+             nwd[instance['name']] = instance['state']['network']
+
         self.reporter.echo("# BEGIN INCANT curdir")
         for instance_name in self.config_manager.instance_configs:
-            ipa = ipa + 1  # faked IP-address lookup
-            self.reporter.echo(f"{ipa} {instance_name}")
+            self.reporter.print_etc_hosts_lines(instance_name, nwd[instance_name])
         self.reporter.echo("# END INCANT curdir")
 
     def incant_init(self):
