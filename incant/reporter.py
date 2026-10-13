@@ -28,5 +28,6 @@ class Reporter:
             if interface == "lo":
                 continue
             for addr in data.get("addresses", []):
-                if addr.get("scope") == "global":
-                    click.echo(f"{addr['address']:<39} {host} # {interface}")
+                address = addr.get("address")
+                if address and addr.get("scope") == "global":
+                    click.echo(f"{address:<39} {host} # {interface}")

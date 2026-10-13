@@ -41,3 +41,20 @@ class TestReporter:
         with patch("click.echo") as mock_echo:
             reporter.print_etc_hosts_lines("myhost", network)
         mock_echo.assert_not_called()
+
+    def test_print_etc_hosts_lines_missing_address_key(self):
+        """Address entry without 'address' key is skipped gracefully."""
+        reporter = Reporter()
+        network = {
+            "eth0": {
+                "addresses": [
+                    {"scope": "global"},  # missing 'address' key
+                    {"address": "10.0.0.5", "scope": "global"},
+                ]
+            },
+        }
+        with patch("click.echo") as mock_echo:
+            reporter.print_etc_hosts_lines("myhost", network)
+        calls = [c.args[0] for c in mock_echo.call_args_list]
+        assert len(calls) == 1
+        assert "10.0.0.5" in calls[0]
