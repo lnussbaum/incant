@@ -6,7 +6,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from .exceptions import IncusCommandError, InstanceError
 from .reporter import Reporter
@@ -229,7 +229,7 @@ class IncusCLI:
         except IncusCommandError:
             return False
 
-    def list_instances_json(self) -> List[Dict]:
+    def list_instances_json(self) -> List[Dict[str, Any]]:
         """Returns the output of 'incus list --format json' as a list of dicts."""
         output = self._run_command(["list", "--format", "json"], quiet=True)
         return json.loads(output)
