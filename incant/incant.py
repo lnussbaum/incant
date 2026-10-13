@@ -1,6 +1,4 @@
-import json
 import os
-import subprocess
 import textwrap
 import time
 from typing import Optional
@@ -121,8 +119,8 @@ class Incant:
         for instance_name in self.config_manager.instance_configs:
             self.reporter.echo(f"{instance_name}")
 
-    def etc_hosts_snippet(self):
-        """Generate a snippet for in /etc/hosts
+    def etc_hosts_snippet(self) -> None:
+        """Generate a snippet for /etc/hosts.
 
         Queries incus for addresses, IPv4 & IPv6, for each defined instance.
         Instance has to be running for getting an address from incus.
@@ -133,17 +131,25 @@ class Incant:
         if not self.config_manager.instance_configs:
             raise ConfigurationError("No instances found in config.")
 
-        cmd = "incus list --format json"
-        incus_list = json.loads(subprocess.check_output(cmd, shell=True))
+        incus_list = self.incus.list_instances_json()
 
         nwd = {}  # network dictionary
         for instance in incus_list:
-             nwd[instance['name']] = instance['state']['network']
+            state = instance.get("state", {})
+            network = state.get("network")
+            if network is not None:
+                nwd[instance["name"]] = network
 
-        self.reporter.echo("# BEGIN INCANT curdir")
+        self.reporter.echo("# BEGIN INCANT")
         for instance_name in self.config_manager.instance_configs:
-            self.reporter.print_etc_hosts_lines(instance_name, nwd[instance_name])
-        self.reporter.echo("# END INCANT curdir")
+            network = nwd.get(instance_name)
+            if network is None:
+                self.reporter.echo(
+                    f"# Instance '{instance_name}' is not running or has no network. Skipping."
+                )
+                continue
+            self.reporter.print_etc_hosts_lines(instance_name, network)
+        self.reporter.echo("# END INCANT")
 
     def incant_init(self):
         example_config = textwrap.dedent("""

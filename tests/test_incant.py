@@ -29,6 +29,9 @@ class MockReporter:
     def echo(self, message: str):
         self.messages.append(("echo", message))
 
+    def print_etc_hosts_lines(self, host: str, network: dict):
+        self.messages.append(("print_etc_hosts_lines", host, network))
+
 
 @pytest.fixture
 def mock_reporter():
@@ -330,3 +333,91 @@ class TestIncant:
         assert ("success", "Creating instance instance2 with image img2...") in mock_reporter.messages
         assert ("success", "Sharing current directory to instance1:/incant ...") in mock_reporter.messages
         assert ("success", "Sharing current directory to instance2:/incant ...") in mock_reporter.messages
+
+    def test_etc_hosts_snippet_success(self, incant_app, mock_config_manager, mock_incus_cli, mock_reporter):
+        mock_config_manager.instance_configs = {
+            "instance1": InstanceConfig(name="instance1", image="img1"),
+        }
+        network = {
+            "eth0": {
+                "addresses": [
+                    {"address": "10.0.0.5", "scope": "global"},
+                    {"address": "fe80::1", "scope": "link"},
+                ]
+            },
+            "lo": {"addresses": [{"address": "127.0.0.1", "scope": "global"}]},
+        }
+        mock_incus_cli.list_instances_json.return_value = [
+            {"name": "instance1", "state": {"network": network}},
+        ]
+
+        incant_app.etc_hosts_snippet()
+
+        mock_incus_cli.list_instances_json.assert_called_once()
+        assert ("echo", "# BEGIN INCANT") in mock_reporter.messages
+        assert ("print_etc_hosts_lines", "instance1", network) in mock_reporter.messages
+        assert ("echo", "# END INCANT") in mock_reporter.messages
+
+    def test_etc_hosts_snippet_no_instances(self, incant_app, mock_config_manager):
+        mock_config_manager.instance_configs = {}
+        with pytest.raises(ConfigurationError, match="No instances found in config."):
+            incant_app.etc_hosts_snippet()
+
+    def test_etc_hosts_snippet_instance_not_running(
+        self, incant_app, mock_config_manager, mock_incus_cli, mock_reporter
+    ):
+        """Instance defined in config but not running (not in incus list) -> comment, skip."""
+        mock_config_manager.instance_configs = {
+            "instance1": InstanceConfig(name="instance1", image="img1"),
+        }
+        mock_incus_cli.list_instances_json.return_value = []
+
+        incant_app.etc_hosts_snippet()
+
+        assert ("echo", "# BEGIN INCANT") in mock_reporter.messages
+        assert (
+            "echo",
+            "# Instance 'instance1' is not running or has no network. Skipping.",
+        ) in mock_reporter.messages
+        assert ("echo", "# END INCANT") in mock_reporter.messages
+
+    def test_etc_hosts_snippet_stopped_instance_no_network(
+        self, incant_app, mock_config_manager, mock_incus_cli, mock_reporter
+    ):
+        """Instance in incus list but state has no network key (stopped) -> comment, skip."""
+        mock_config_manager.instance_configs = {
+            "instance1": InstanceConfig(name="instance1", image="img1"),
+        }
+        mock_incus_cli.list_instances_json.return_value = [
+            {"name": "instance1", "state": {}},
+        ]
+
+        incant_app.etc_hosts_snippet()
+
+        assert (
+            "echo",
+            "# Instance 'instance1' is not running or has no network. Skipping.",
+        ) in mock_reporter.messages
+        # No print_etc_hosts_lines call
+        assert not any(m[0] == "print_etc_hosts_lines" for m in mock_reporter.messages)
+
+    def test_etc_hosts_snippet_multiple_instances(
+        self, incant_app, mock_config_manager, mock_incus_cli, mock_reporter
+    ):
+        """Multiple instances: running one gets hosts lines, missing one gets comment."""
+        mock_config_manager.instance_configs = {
+            "running": InstanceConfig(name="running", image="img"),
+            "stopped": InstanceConfig(name="stopped", image="img"),
+        }
+        network = {"eth0": {"addresses": [{"address": "10.0.0.5", "scope": "global"}]}}
+        mock_incus_cli.list_instances_json.return_value = [
+            {"name": "running", "state": {"network": network}},
+        ]
+
+        incant_app.etc_hosts_snippet()
+
+        assert ("print_etc_hosts_lines", "running", network) in mock_reporter.messages
+        assert (
+            "echo",
+            "# Instance 'stopped' is not running or has no network. Skipping.",
+        ) in mock_reporter.messages
