@@ -255,3 +255,100 @@ def test_valid_provision_steps(tmp_path, mock_reporter, mock_incus_cli):
     cm = ConfigManager(mock_incus_cli, mock_reporter, config_path=str(config_file))
     cm.load_config()
     cm.validate_config()
+
+
+def test_valid_shared_folders(tmp_path, mock_reporter):
+    """Test that valid shared_folders entries are accepted."""
+    config = {
+        "instances": {
+            "test": {
+                "image": "ubuntu",
+                "shared_folders": ["./data:/data", "/host/path:/mnt/host"],
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    cm = ConfigManager(mock_incus_cli, mock_reporter, config_path=str(config_file))
+    # No exception should be raised
+    assert cm.instance_configs["test"].shared_folders == ["./data:/data", "/host/path:/mnt/host"]
+
+
+def test_invalid_shared_folders_not_a_list(tmp_path, mock_reporter):
+    """Test that shared_folders must be a list."""
+    config = {
+        "instances": {
+            "test": {
+                "image": "ubuntu",
+                "shared_folders": "./data:/data",  # string, not a list
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    with pytest.raises(ConfigurationError, match="shared_folders.*must be a list"):
+        ConfigManager(mock_incus_cli, mock_reporter, config_path=str(config_file))
+
+
+def test_invalid_shared_folders_entry_not_a_string(tmp_path, mock_reporter):
+    """Test that shared_folders entries must be strings."""
+    config = {
+        "instances": {
+            "test": {
+                "image": "ubuntu",
+                "shared_folders": [123],
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    with pytest.raises(ConfigurationError, match="shared_folders entry 0.*must be a string"):
+        ConfigManager(mock_incus_cli, mock_reporter, config_path=str(config_file))
+
+
+def test_invalid_shared_folders_no_colon(tmp_path, mock_reporter):
+    """Test that shared_folders entries must contain a colon."""
+    config = {
+        "instances": {
+            "test": {
+                "image": "ubuntu",
+                "shared_folders": ["./data"],
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    with pytest.raises(ConfigurationError, match="expected '<source>:<path>'"):
+        ConfigManager(mock_incus_cli, mock_reporter, config_path=str(config_file))
+
+
+def test_invalid_shared_folders_empty_source(tmp_path, mock_reporter):
+    """Test that shared_folders entries must have a non-empty source."""
+    config = {
+        "instances": {
+            "test": {
+                "image": "ubuntu",
+                "shared_folders": [":/data"],
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    with pytest.raises(ConfigurationError, match="source and path must not be empty"):
+        ConfigManager(mock_incus_cli, mock_reporter, config_path=str(config_file))
+
+
+def test_invalid_shared_folders_empty_path(tmp_path, mock_reporter):
+    """Test that shared_folders entries must have a non-empty path."""
+    config = {
+        "instances": {
+            "test": {
+                "image": "ubuntu",
+                "shared_folders": ["./data:"],
+            }
+        }
+    }
+    config_file = tmp_path / "incant.yaml"
+    config_file.write_text(yaml.dump(config))
+    with pytest.raises(ConfigurationError, match="source and path must not be empty"):
+        ConfigManager(mock_incus_cli, mock_reporter, config_path=str(config_file))

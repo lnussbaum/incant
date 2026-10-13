@@ -190,6 +190,31 @@ class ConfigManager:
                         f"Pre-launch command {cmd_idx} in instance '{name}' must be a string."
                     )
 
+    def _validate_shared_folders(self, instance: InstanceConfig, name: str):
+        if instance.shared_folders is None:
+            return
+        if not isinstance(instance.shared_folders, list):
+            raise ConfigurationError(
+                f"shared_folders for instance '{name}' must be a list of '<source>:<path>' strings."
+            )
+        for idx, entry in enumerate(instance.shared_folders):
+            if not isinstance(entry, str):
+                raise ConfigurationError(
+                    f"shared_folders entry {idx} in instance '{name}' must be a string."
+                )
+            try:
+                source, path = entry.split(":")
+            except ValueError as exc:
+                raise ConfigurationError(
+                    f"Invalid shared_folders entry {entry!r} in instance '{name}': "
+                    "expected '<source>:<path>'"
+                ) from exc
+            if not source.strip() or not path.strip():
+                raise ConfigurationError(
+                    f"Invalid shared_folders entry {entry!r} in instance '{name}': "
+                    "source and path must not be empty"
+                )
+
     def validate_config(self):
         if not self.instance_configs:
             raise ConfigurationError("No instances found in config")
@@ -198,3 +223,4 @@ class ConfigManager:
             # Validate 'provision' field
             self._validate_provisioning(instance_config, name)
             self._validate_pre_launch(instance_config, name)
+            self._validate_shared_folders(instance_config, name)
