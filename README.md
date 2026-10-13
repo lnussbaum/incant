@@ -164,6 +164,33 @@ $ incant destroy my-instance
 $ incant dump
 ```
 
+### Generate /etc/hosts entries
+
+Generate an `/etc/hosts` snippet for all instances defined in your configuration that are currently running:
+
+```sh
+$ incant hosts
+```
+
+Example output:
+
+```
+# BEGIN INCANT
+10.210.161.22                          my-instance # eth0
+fd42:2ce4:e603:54c9:d710:d2b3:ad7d:e4fc my-instance # eth0
+# END INCANT
+```
+
+The output is wrapped in `# BEGIN INCANT` / `# END INCANT` markers (inspired by Ansible's `blockinfile` module), so you can safely insert it into `/etc/hosts` and update it idempotently. For example:
+
+```sh
+$ incant hosts | sudo tee /etc/incant-hosts
+```
+
+Or use a tool like [blockinfile](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/blockinfile_module.html) to manage the block in `/etc/hosts`.
+
+Only **global**-scope addresses (IPv4 and IPv6) are included. The loopback interface (`lo`) and link-local addresses are excluded. Instances that are not running are skipped with a comment line.
+
 ## Caveats
 
 ### Shared folders don't work on ARM64

@@ -44,6 +44,9 @@ incant - an Incus frontend for declarative development environments
 **list**
 : List all instances defined in the configuration.
 
+**hosts**
+: Generate /etc/hosts snippet for each defined and running instance.
+
 It can be used for stop and start.
 ```shell
 incus list
