@@ -303,6 +303,52 @@ class TestIncant:
         mock_incus_cli.create_shared_folder.assert_called_once_with("test-instance")
 
     @patch("incant.incant.time.sleep", return_value=None)
+    def test_up_single_instance_with_shared_folders(
+        self, mock_sleep, incant_app, mock_config_manager, mock_incus_cli, mock_reporter
+    ):
+        """Instance with shared_folders list should dispatch to create_shared_folders."""
+        instance_config = InstanceConfig(
+            name="test-instance",
+            image="img",
+            shared_folder=False,
+            shared_folders=["./data:/data", "/host/path:/mnt/host"],
+            wait=True,
+        )
+        mock_config_manager.instance_configs = {"test-instance": instance_config}
+        mock_incus_cli.is_agent_running.return_value = True
+        mock_incus_cli.is_agent_usable.return_value = True
+        mock_incus_cli.is_instance_ready.return_value = True
+
+        incant_app.up("test-instance")
+
+        mock_incus_cli.create_shared_folder.assert_not_called()
+        mock_incus_cli.create_shared_folders.assert_called_once_with(
+            "test-instance", ["./data:/data", "/host/path:/mnt/host"]
+        )
+
+    @patch("incant.incant.time.sleep", return_value=None)
+    def test_up_single_instance_with_both_shared_folder_and_shared_folders(
+        self, mock_sleep, incant_app, mock_config_manager, mock_incus_cli, mock_reporter
+    ):
+        """Both shared_folder and shared_folders can be used together."""
+        instance_config = InstanceConfig(
+            name="test-instance",
+            image="img",
+            shared_folder=True,
+            shared_folders=["./data:/data"],
+            wait=True,
+        )
+        mock_config_manager.instance_configs = {"test-instance": instance_config}
+        mock_incus_cli.is_agent_running.return_value = True
+        mock_incus_cli.is_agent_usable.return_value = True
+        mock_incus_cli.is_instance_ready.return_value = True
+
+        incant_app.up("test-instance")
+
+        mock_incus_cli.create_shared_folder.assert_called_once_with("test-instance")
+        mock_incus_cli.create_shared_folders.assert_called_once_with("test-instance", ["./data:/data"])
+
+    @patch("incant.incant.time.sleep", return_value=None)
     def test_up_multiple_instances(
         self, mock_sleep, incant_app, mock_config_manager, mock_incus_cli, mock_reporter
     ):
