@@ -83,6 +83,12 @@ class Incant:
             if instance_config.shared_folder:
                 self.incus.create_shared_folder(instance_config.name)
 
+            if instance_config.shared_folders:
+                self.incus.create_shared_folders(
+                    instance_config.name,
+                    instance_config.shared_folders,
+                )
+
             if instance_config.provision and provision:
                 # Automatically run provisioning after instance creation
                 self.provision(instance_config.name)
@@ -129,6 +135,9 @@ class Incant:
                   size: 1GiB
               wait: true # wait for instance to be ready (incus agent running)
               shared_folder: false # disable shared folder (/incant) setup (default: enabled)
+              # shared_folders: # additional shared folders in '<source>:<path>' format
+              #   - ./data:/data # share ./data from the host as /data in the instance
+              #   - /host/path:/mnt/host # share an absolute path
               config: # any incus config options
                 limits.processes: 100
             basic-vm:

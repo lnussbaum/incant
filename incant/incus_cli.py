@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import shlex
@@ -8,7 +9,7 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from .exceptions import IncusCommandError, InstanceError
+from .exceptions import ConfigurationError, IncusCommandError, InstanceError
 from .reporter import Reporter
 from .types import FilePushConfig, InstanceConfig
 
@@ -109,16 +110,43 @@ class IncusCLI:
             self._run_command(["start", instance_config.name])
 
     def create_shared_folder(self, name: str) -> None:
+        self.create_shared_folder_device(name, source=str(Path.cwd()), path="/incant")
+
+    def create_shared_folders(self, name: str, shared_folders: List[str]) -> None:
         curdir = Path.cwd()
+
+        for shared_folder in shared_folders:
+            try:
+                source_str, path = shared_folder.split(":")
+            except ValueError as exc:
+                raise ConfigurationError(
+                    f"Invalid shared_folders entry {shared_folder!r}: expected '<source>:<path>'"
+                ) from exc
+            source_str = source_str.strip()
+            path = path.strip()
+            if not source_str or not path:
+                raise ConfigurationError(
+                    f"Invalid shared_folders entry {shared_folder!r}: "
+                    "source and path must not be empty"
+                )
+            source = str((curdir / Path(source_str)).absolute())
+            self.create_shared_folder_device(name, source=source, path=path)
+
+    def create_shared_folder_device(self, name: str, source: str, path: str) -> None:
+        # Use a human-readable suffix from the path, with a short hash to avoid collisions
+        safe_name = path.strip("/").replace("/", "_")[:20] or "root"
+        hash_suffix = hashlib.blake2b(path.encode(), digest_size=5).hexdigest()
+        device_name = f"{name}_shared_{safe_name}_{hash_suffix}"
+
         command = [
             "config",
             "device",
             "add",
             name,
-            f"{name}_shared_incant",
+            device_name,
             "disk",
-            f"source={curdir}",
-            "path=/incant",
+            f"source={source}",
+            f"path={path}",
             "shift=true",  # First attempt with shift enabled
         ]
 
@@ -140,7 +168,7 @@ class IncusCLI:
                 try:
                     self.exec(
                         name,
-                        ["grep", "-wq", "/incant", "/proc/mounts"],
+                        ["grep", "-wq", path, "/proc/mounts"],
                         capture_output=False,
                     )
                     return  # Success!
@@ -150,15 +178,15 @@ class IncusCLI:
                     # On last attempt, fall through to re-create device
 
             self.reporter.warning(
-                "Shared folder creation failed (/incant not mounted). Retrying...",
+                f"Shared folder creation failed ({path} not mounted). Retrying...",
             )
             self._run_command(
-                ["config", "device", "remove", name, f"{name}_shared_incant"],
+                ["config", "device", "remove", name, device_name],
                 capture_output=False,
             )
             self._run_command(command, capture_output=False)
 
-        raise InstanceError("Shared folder creation failed.")
+        raise InstanceError(f"Shared folder creation failed ({path} not mounted).")
 
     def destroy_instance(self, name: str) -> None:
         """Destroy (stop if needed, then delete) an instance."""
