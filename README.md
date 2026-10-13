@@ -7,7 +7,7 @@ Incant is a frontend for [Incus](https://linuxcontainers.org/incus/) that provid
 ## Features
 
 - **Declarative Configuration**: Define your development environments using simple YAML files.
-- **Shared Folder Support**: Mount the current working directory into the instance.
+- **Shared Folder Support**: Mount the current working directory into the instance, plus any number of additional shared folders.
 - **Provisioning Support**: Declare and run provisioning scripts automatically, copy files to the instance, set up an SSH server automatically, and configure an LLMNR daemon.
 
 ## Installation
@@ -78,6 +78,9 @@ instances:
         size: 1GiB
     wait: true # wait for instance to be ready (incus agent running)
     shared_folder: false # disable shared folder (/incant) setup (default: enabled)
+    # shared_folders: # additional shared folders in '<source>:<path>' format
+    #   - ./data:/data # share ./data from the host as /data in the instance
+    #   - /host/path:/mnt/host # share an absolute path
     config: # any incus config options
       limits.processes: 100
   basic-vm:
@@ -176,6 +179,17 @@ instances:
   my-instance:
     shared_folder: false
 ```
+
+Additional shared folders can be configured using `shared_folders`, a list of `<source>:<path>` entries:
+```yaml
+instances:
+  my-instance:
+    shared_folders:
+      - ./data:/data # share ./data from the host as /data in the instance
+      - /host/path:/mnt/host # share an absolute path
+```
+
+Relative source paths are resolved against the directory where `incant` is run. Both `shared_folder` (the default `/incant` mount) and `shared_folders` can be used together.
 
 ### Virtual machines (not containers) for RHEL-based distributions need an explicit agent:config device
 

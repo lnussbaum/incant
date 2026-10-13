@@ -135,6 +135,9 @@ class Incant:
                   size: 1GiB
               wait: true # wait for instance to be ready (incus agent running)
               shared_folder: false # disable shared folder (/incant) setup (default: enabled)
+              # shared_folders: # additional shared folders in '<source>:<path>' format
+              #   - ./data:/data # share ./data from the host as /data in the instance
+              #   - /host/path:/mnt/host # share an absolute path
               config: # any incus config options
                 limits.processes: 100
             basic-vm:
