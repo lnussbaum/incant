@@ -83,6 +83,12 @@ class Incant:
             if instance_config.shared_folder:
                 self.incus.create_shared_folder(instance_config.name)
 
+            if instance_config.shared_folders:
+                self.incus.create_shared_folders(
+                    instance_config.name,
+                    instance_config.shared_folders,
+                )
+
             if instance_config.provision and provision:
                 # Automatically run provisioning after instance creation
                 self.provision(instance_config.name)
