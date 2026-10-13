@@ -229,6 +229,11 @@ class IncusCLI:
         except IncusCommandError:
             return False
 
+    def list_instances_json(self) -> List[Dict]:
+        """Returns the output of 'incus list --format json' as a list of dicts."""
+        output = self._run_command(["list", "--format", "json"], quiet=True)
+        return json.loads(output)
+
     def run_script(self, name: str, script: str, quiet: bool = True) -> None:
         """Run a script in an instance."""
 
