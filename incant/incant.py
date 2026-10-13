@@ -133,16 +133,16 @@ class Incant:
 
         incus_list = self.incus.list_instances_json()
 
-        nwd = {}  # network dictionary
+        instance_networks = {}  # instance name -> network state
         for instance in incus_list:
             state = instance.get("state", {})
             network = state.get("network")
             if network is not None:
-                nwd[instance["name"]] = network
+                instance_networks[instance["name"]] = network
 
         self.reporter.echo("# BEGIN INCANT")
         for instance_name in self.config_manager.instance_configs:
-            network = nwd.get(instance_name)
+            network = instance_networks.get(instance_name)
             if network is None:
                 self.reporter.echo(
                     f"# Instance '{instance_name}' is not running or has no network. Skipping."
