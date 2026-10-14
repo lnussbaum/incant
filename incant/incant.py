@@ -119,6 +119,38 @@ class Incant:
         for instance_name in self.config_manager.instance_configs:
             self.reporter.echo(f"{instance_name}")
 
+    def etc_hosts_snippet(self) -> None:
+        """Generate a snippet for /etc/hosts.
+
+        Queries incus for addresses, IPv4 & IPv6, for each defined instance.
+        Instance has to be running for getting an address from incus.
+
+        The idea of markers '# BEGIN INCANT' and '# END INCANT'
+        comes from ansible module blockinfile.
+        """
+        if not self.config_manager.instance_configs:
+            raise ConfigurationError("No instances found in config.")
+
+        incus_list = self.incus.list_instances_json()
+
+        instance_networks = {}  # instance name -> network state
+        for instance in incus_list:
+            state = instance.get("state", {})
+            network = state.get("network")
+            if network is not None:
+                instance_networks[instance["name"]] = network
+
+        self.reporter.echo("# BEGIN INCANT")
+        for instance_name in self.config_manager.instance_configs:
+            network = instance_networks.get(instance_name)
+            if network is None:
+                self.reporter.echo(
+                    f"# Instance '{instance_name}' is not running or has no network. Skipping."
+                )
+                continue
+            self.reporter.print_etc_hosts_lines(instance_name, network)
+        self.reporter.echo("# END INCANT")
+
     def incant_init(self):
         example_config = textwrap.dedent("""
           instances:

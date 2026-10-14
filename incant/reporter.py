@@ -21,3 +21,13 @@ class Reporter:
 
     def echo(self, message: str) -> None:
         click.echo(message)
+
+    def print_etc_hosts_lines(self, host: str, network: dict) -> None:
+        """Print /etc/hosts lines for a host, given its incus network state."""
+        for interface, data in network.items():
+            if interface == "lo":
+                continue
+            for addr in data.get("addresses", []):
+                address = addr.get("address")
+                if address and addr.get("scope") == "global":
+                    click.echo(f"{address:<39} {host} # {interface}")

@@ -1,4 +1,6 @@
-from unittest.mock import patch
+import json
+from unittest.mock import MagicMock, patch
+
 from incant.incus_cli import IncusCLI
 from incant.reporter import Reporter
 from incant.types import InstanceConfig
@@ -68,3 +70,22 @@ class TestIncusCLI:
             "eth0,ipv4.address=10.0.0.1",
             "root,size=10GiB",
         ]
+
+    def test_list_instances_json(self):
+        """Verify that list_instances_json calls incus list --format json and parses output."""
+        reporter = Reporter()
+        incus_cli = IncusCLI(reporter)
+
+        fake_output = json.dumps([{"name": "test-instance", "state": {"network": {}}}])
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(stdout=fake_output, stderr="")
+
+            result = incus_cli.list_instances_json()
+
+            assert result == [{"name": "test-instance", "state": {"network": {}}}]
+
+            # Verify called arguments -- list-based, no shell=True
+            args, kwargs = mock_run.call_args
+            assert args[0] == ["incus", "list", "--format", "json"]
+            assert kwargs.get("check") is True
